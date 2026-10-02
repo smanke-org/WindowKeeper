@@ -28,9 +28,10 @@ final class StatusItemController: NSObject, NSMenuDelegate {
         updateIcon()
     }
 
-    /// Badged while Accessibility access is missing, since nothing works without it.
+    /// A car's side window. Badged with "!" while Accessibility access is missing, since
+    /// nothing works without it.
     func updateIcon() {
-        let symbol = keeper.isTrusted ? "macwindow.on.rectangle" : "exclamationmark.triangle.fill"
+        let symbol = keeper.isTrusted ? "car.window.right" : "car.window.right.exclamationmark"
         statusItem.button?.image = NSImage(systemSymbolName: symbol, accessibilityDescription: "WindowKeeper")
     }
 
