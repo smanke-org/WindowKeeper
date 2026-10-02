@@ -26,7 +26,7 @@ after a restart, after sleep, when you dock at a different desk, or when an app 
 ## Install
 
 Download `WindowKeeper.dmg` from the
-[latest release](https://github.com/smanke/WindowKeeper/releases/latest/download/WindowKeeper.dmg),
+[latest release](https://github.com/smanke-org/WindowKeeper/releases/latest/download/WindowKeeper.dmg),
 drag WindowKeeper to Applications and open it. Then allow it under
 **System Settings › Privacy & Security › Accessibility** — that is how it reads and moves
 other apps' windows. Requires macOS 26 or later.

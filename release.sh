@@ -65,7 +65,7 @@ gh release create "${TAG}" "${VERSIONED}" "${STABLE}" \
 echo "==> Verifying the permanent download link"
 # GitHub takes a moment to point the latest-release redirect at a new asset, so this
 # retries rather than reporting a failure that would have resolved on its own.
-URL="https://github.com/smanke/WindowKeeper/releases/latest/download/WindowKeeper.dmg"
+URL="https://github.com/smanke-org/WindowKeeper/releases/latest/download/WindowKeeper.dmg"
 for attempt in 1 2 3 4 5 6; do
   CODE=$(curl -sL -o /dev/null -w "%{http_code}" "${URL}")
   if [ "${CODE}" = "200" ]; then

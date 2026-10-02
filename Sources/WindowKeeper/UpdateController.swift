@@ -13,7 +13,7 @@ import AppKit
 ///
 /// A failure at any step aborts the update and leaves the installed app untouched.
 enum UpdateController {
-    private static let repository = "smanke/WindowKeeper"
+    private static let repository = "smanke-org/WindowKeeper"
 
     enum UpdateOutcome {
         case upToDate(current: String)
