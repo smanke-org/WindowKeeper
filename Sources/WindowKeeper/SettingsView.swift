@@ -48,6 +48,34 @@ struct SettingsView: View {
 
             Divider()
 
+            section("Desktop Icons") {
+                Toggle("Remember desktop icon positions too", isOn: $settings.rememberDesktopIcons)
+                caption("Saved and restored with your windows, per desk — including disks and servers, which go back to their spot when they mount again. WindowKeeper asks Finder to move them, which needs Automation › Finder.")
+                if settings.rememberDesktopIcons, FinderDesktop.access == .denied {
+                    HStack {
+                        Label("Finder access is off, so icons can’t be read or moved.", systemImage: "exclamationmark.triangle.fill")
+                            .font(.caption)
+                            .foregroundStyle(.orange)
+                        Button("Open Automation Settings") { FinderDesktop.openAutomationSettings() }
+                            .controlSize(.small)
+                    }
+                }
+                if settings.rememberDesktopIcons, FinderDesktop.arrangementIgnoresPositions {
+                    caption("Finder is sorting your desktop, so it ignores icon positions. In Finder, click the desktop and choose View › Sort By › None or Snap to Grid.")
+                        .foregroundStyle(.orange)
+                }
+            }
+
+            Divider()
+
+            section("Keyboard Shortcuts") {
+                shortcutRow("Save all", $settings.saveAllHotKey)
+                shortcutRow("Restore all", $settings.restoreAllHotKey)
+                caption("Work from any app. Click a box and press the keys; Delete clears it.")
+            }
+
+            Divider()
+
             section("General") {
                 Toggle("Open WindowKeeper at login", isOn: Binding(
                     get: { launchAtLogin.isEnabled },
@@ -128,6 +156,15 @@ struct SettingsView: View {
         let cloud = store.cloudFolderURL.appending(path: "profiles.json")
         let target = FileManager.default.fileExists(atPath: cloud.path) ? cloud : ProfileStore.localURL
         NSWorkspace.shared.activateFileViewerSelecting([target])
+    }
+
+    private func shortcutRow(_ label: String, _ binding: Binding<HotKey?>) -> some View {
+        HStack {
+            Text(label)
+            Spacer()
+            ShortcutRecorder(hotKey: binding)
+                .fixedSize()
+        }
     }
 
     private func section<Content: View>(_ title: String, @ViewBuilder content: () -> Content) -> some View {

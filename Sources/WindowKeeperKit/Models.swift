@@ -104,6 +104,10 @@ public struct MonitorProfile: Codable, Identifiable, Hashable, Sendable {
     public var signature: String
     public var displays: [DisplayRecord]
     public var windows: [SavedWindow]
+    /// Desktop icon positions for this desk.
+    public var icons: [SavedIcon]
+    /// Auto-save leaves a locked profile alone; an explicit Save still writes to it.
+    public var isLocked: Bool
     public var created: Date
     /// Last time a save changed something.
     public var lastSaved: Date?
@@ -111,18 +115,77 @@ public struct MonitorProfile: Codable, Identifiable, Hashable, Sendable {
     public var importedFrom: String?
 
     public init(id: UUID = UUID(), name: String, signature: String, displays: [DisplayRecord],
-                windows: [SavedWindow] = [], created: Date = Date(), lastSaved: Date? = nil, importedFrom: String? = nil) {
+                windows: [SavedWindow] = [], icons: [SavedIcon] = [], isLocked: Bool = false,
+                created: Date = Date(), lastSaved: Date? = nil, importedFrom: String? = nil) {
         self.id = id
         self.name = name
         self.signature = signature
         self.displays = displays
         self.windows = windows
+        self.icons = icons
+        self.isLocked = isLocked
         self.created = created
         self.lastSaved = lastSaved
         self.importedFrom = importedFrom
     }
 
+    private enum CodingKeys: String, CodingKey {
+        case id, name, signature, displays, windows, icons, isLocked, created, lastSaved, importedFrom
+    }
+
+    /// `icons` and `isLocked` arrived in 1.0.3; libraries saved by 1.0.2 have neither.
+    public init(from decoder: Decoder) throws {
+        let c = try decoder.container(keyedBy: CodingKeys.self)
+        id = try c.decode(UUID.self, forKey: .id)
+        name = try c.decode(String.self, forKey: .name)
+        signature = try c.decode(String.self, forKey: .signature)
+        displays = try c.decode([DisplayRecord].self, forKey: .displays)
+        windows = try c.decode([SavedWindow].self, forKey: .windows)
+        icons = try c.decodeIfPresent([SavedIcon].self, forKey: .icons) ?? []
+        isLocked = try c.decodeIfPresent(Bool.self, forKey: .isLocked) ?? false
+        created = try c.decode(Date.self, forKey: .created)
+        lastSaved = try c.decodeIfPresent(Date.self, forKey: .lastSaved)
+        importedFrom = try c.decodeIfPresent(String.self, forKey: .importedFrom)
+    }
+
     public var hasExternalDisplay: Bool { displays.contains { !$0.isBuiltin } }
+}
+
+/// One desktop icon's saved place.
+public struct SavedIcon: Codable, Hashable, Sendable {
+    public enum Kind: String, Codable, Sendable {
+        /// A file, folder or alias in the Desktop folder.
+        case item
+        /// A disk or server Finder shows on the desktop. Comes and goes as it mounts.
+        case volume
+    }
+
+    /// The name Finder shows — the file name, or the volume name.
+    public var name: String
+    public var kind: Kind
+    /// The file's identifier within its volume, so an icon renamed since the save is still
+    /// recognised. Nil for volumes.
+    public var fileID: String?
+    public var displayKey: String
+    /// The icon's centre, as an offset from its display's top-left corner. Only `x`/`y` are used.
+    public var x: Double
+    public var y: Double
+    public var savedAt: Date
+
+    public init(name: String, kind: Kind, fileID: String?, displayKey: String, x: Double, y: Double, savedAt: Date) {
+        self.name = name
+        self.kind = kind
+        self.fileID = fileID
+        self.displayKey = displayKey
+        self.x = x
+        self.y = y
+        self.savedAt = savedAt
+    }
+
+    public func samePlace(as other: SavedIcon) -> Bool {
+        name == other.name && kind == other.kind && fileID == other.fileID
+            && displayKey == other.displayKey && x == other.x && y == other.y
+    }
 }
 
 /// Everything one Mac has saved. One of these per Mac, in that Mac's own iCloud folder.

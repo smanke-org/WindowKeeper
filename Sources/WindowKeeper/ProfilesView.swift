@@ -92,8 +92,16 @@ private struct ProfileRow: View {
                         .background(.green.opacity(0.2), in: Capsule())
                 }
                 Spacer()
+                Button {
+                    keeper.setLocked(!profile.isLocked, profileID: profile.id)
+                } label: {
+                    Image(systemName: profile.isLocked ? "lock.fill" : "lock.open")
+                }
+                .help(profile.isLocked
+                      ? "Locked: auto-save leaves this layout alone. Save Now still updates it. Click to unlock."
+                      : "Lock this layout so auto-save never changes it.")
                 Button("Restore") { keeper.restore(.all, from: profile) }
-                    .disabled(profile.windows.isEmpty)
+                    .disabled(profile.windows.isEmpty && profile.icons.isEmpty)
                 Button(role: .destructive, action: onDelete) { Image(systemName: "trash") }
                     .help("Delete this profile")
             }
@@ -129,7 +137,8 @@ private struct ProfileRow: View {
     }
 
     private var details: String {
-        var parts = ["\(profile.windows.count) saved window(s)"]
+        var parts = ["\(profile.windows.count) window(s)", "\(profile.icons.count) desktop icon(s)"]
+        if profile.isLocked { parts.append("locked") }
         if let saved = profile.lastSaved {
             parts.append("last changed \(saved.formatted(.relative(presentation: .named)))")
         }

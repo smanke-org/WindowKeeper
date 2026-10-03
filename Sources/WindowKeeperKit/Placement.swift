@@ -39,6 +39,24 @@ public enum Placement {
         return clamp(frame, into: target.visible)
     }
 
+    /// Where a saved desktop icon's centre goes. The same rules as windows: its own display
+    /// at the same offset; otherwise the display of the same rank, scaled, kept on screen.
+    public static func point(for icon: SavedIcon, savedDisplays: [DisplayRecord], live: [LiveDisplay]) -> CGPoint? {
+        guard let main = live.first(where: \.isMain) ?? live.first else { return nil }
+        if let home = live.first(where: { $0.key == icon.displayKey }) {
+            return CGPoint(x: home.bounds.minX + icon.x, y: home.bounds.minY + icon.y)
+        }
+        let target = stand(in: icon.displayKey, savedDisplays: savedDisplays, live: live) ?? main
+        let area = target.visible.insetBy(dx: 40, dy: 40)
+        var point = CGPoint(x: area.minX + icon.x, y: area.minY + icon.y)
+        if let source = savedDisplays.first(where: { $0.key == icon.displayKey })?.bounds.rect,
+           source.width > 0, source.height > 0 {
+            point = CGPoint(x: target.visible.minX + icon.x * target.visible.width / source.width,
+                            y: target.visible.minY + icon.y * target.visible.height / source.height)
+        }
+        return CGPoint(x: min(max(point.x, area.minX), area.maxX), y: min(max(point.y, area.minY), area.maxY))
+    }
+
     /// The live display standing in for a missing one: same rank left to right, among the
     /// saved profile's displays and the connected ones.
     static func stand(in key: String, savedDisplays: [DisplayRecord], live: [LiveDisplay]) -> LiveDisplay? {

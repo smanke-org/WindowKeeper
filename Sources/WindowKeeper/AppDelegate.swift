@@ -24,6 +24,14 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         keeper.start()
         observeTrust()
         listenForDebugCommands()
+        FinderDesktop.onAccessChange = { [weak self] in self?.statusItem.updateIcon() }
+        HotKeyCenter.shared.perform = { [weak self] action in
+            switch action {
+            case .saveAll: self?.keeper.save(.all)
+            case .restoreAll: self?.keeper.restore(.all)
+            }
+        }
+        HotKeyCenter.shared.apply()
 
         launchAtLogin.enableOnFirstRun()
         if AppSettings.shared.checkForUpdatesAtLaunch {
@@ -52,7 +60,8 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
 
     /// Development affordance, only with WINDOWKEEPER_DEBUG=1. A distributed notification
     /// whose object is "save:<bundle id>", "restore:<bundle id>", "show:settings",
-    /// "show:profiles" or "dump:menu" runs that action, so the installed, permission-holding
+    /// "show:profiles", "dump:menu", "icons:save", "icons:restore", "undo:last",
+    /// "lock:on|off" or "autosave:now" runs that action, so the installed, permission-holding
     /// build can be tested against a throwaway app without driving the menu bar or touching
     /// anyone's real windows. Results go to the log.
     private func listenForDebugCommands() {
@@ -77,6 +86,11 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         case ("show", "settings"): settingsWindow.show()
         case ("show", "profiles"): profilesWindow.show(highlight: keeper.currentProfileID)
         case ("dump", "menu"): Diagnostics.note("debug: menu\n" + statusItem.dumpMenu())
+        case ("icons", "save"): keeper.save(.all)
+        case ("icons", "restore"): keeper.restoreIconsOnly()
+        case ("undo", "last"): keeper.undoLastRestore()
+        case ("lock", let state): if let id = keeper.currentProfileID { keeper.setLocked(state == "on", profileID: id) }
+        case ("autosave", "now"): keeper.debugAutoSave()
         default: Diagnostics.note("debug: unknown command \(command)")
         }
     }

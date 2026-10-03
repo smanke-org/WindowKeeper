@@ -164,3 +164,80 @@ struct SettleTests {
         #expect(t.sample("a") == .settled(signature: "a", changed: false, disrupted: false))
     }
 }
+
+struct DesktopIconTests {
+    let dell = LiveDisplay(key: "dell", name: "DELL", isBuiltin: false, isMain: true,
+                           bounds: CGRect(x: 0, y: 0, width: 3840, height: 2160),
+                           visible: CGRect(x: 0, y: 30, width: 3840, height: 2130))
+    let hp = LiveDisplay(key: "hp", name: "HP", isBuiltin: false, isMain: false,
+                         bounds: CGRect(x: 3840, y: 441, width: 2560, height: 1440),
+                         visible: CGRect(x: 3840, y: 441, width: 2560, height: 1440))
+
+    private func icon(_ name: String, _ key: String, _ x: Double, _ y: Double, kind: SavedIcon.Kind = .item,
+                      at date: Date = .distantPast) -> SavedIcon {
+        SavedIcon(name: name, kind: kind, fileID: kind == .item ? "id-\(name)" : nil, displayKey: key, x: x, y: y, savedAt: date)
+    }
+
+    @Test func libraryFrom102Decodes() throws {
+        // A profile as 1.0.2 wrote it: no icons, no isLocked.
+        let json = """
+        {"id":"8C1D7A4E-2F7B-4C55-9F0A-3A1C2B3D4E5F","name":"Desk","signature":"a|b","displays":[],
+         "windows":[],"created":"2026-10-02T14:00:00Z"}
+        """
+        let decoder = JSONDecoder()
+        decoder.dateDecodingStrategy = .iso8601
+        let profile = try decoder.decode(MonitorProfile.self, from: Data(json.utf8))
+        #expect(profile.icons.isEmpty)
+        #expect(!profile.isLocked)
+    }
+
+    @Test func iconOnItsOwnDisplayKeepsOffset() {
+        let p = Placement.point(for: icon("a", "hp", 100, 200), savedDisplays: [], live: [dell, hp])
+        #expect(p == CGPoint(x: 3940, y: 641))
+    }
+
+    @Test func iconOnMissingDisplayLandsOnScreen() {
+        let saved = [DisplayRecord(key: "x", name: "X", isBuiltin: false, bounds: Frame(x: 0, y: 0, width: 1920, height: 1080)),
+                     DisplayRecord(key: "y", name: "Y", isBuiltin: false, bounds: Frame(x: 1920, y: 0, width: 1920, height: 1080))]
+        let p = Placement.point(for: icon("a", "y", 1900, 1070), savedDisplays: saved, live: [dell, hp])!
+        #expect(hp.visible.insetBy(dx: 39, dy: 39).contains(p))
+    }
+
+    @Test func mergeKeepsAbsentVolumesAndTimestamps() {
+        let old = Date(timeIntervalSince1970: 100)
+        let existing = [icon("Report", "dell", 10, 10, at: old), icon("NAS", "dell", 50, 50, kind: .volume)]
+        let merged = IconMerge.merge(existing: existing, captured: [icon("Report", "dell", 10, 10, at: Date())])
+        #expect(merged.map(\.name) == ["Report", "NAS"])
+        #expect(merged.first?.savedAt == old)
+    }
+
+    @Test func deletedFilesDropOut() {
+        let merged = IconMerge.merge(existing: [icon("Old", "dell", 1, 1)], captured: [icon("New", "dell", 2, 2)])
+        #expect(merged.map(\.name) == ["New"])
+    }
+
+    @Test func iconEvacuationIsDetected() {
+        let before = [icon("a", "dell", 1, 1), icon("b", "hp", 1, 1), icon("c", "hp", 2, 2)]
+        let after = [icon("a", "dell", 1, 1), icon("b", "dell", 3, 3), icon("c", "dell", 4, 4)]
+        #expect(SnapshotCheck.looksDisplaced(captured: after, previous: before, connectedDisplays: 2))
+    }
+
+    @Test func draggingTheOnlySideScreenIconIsNotAPileUp() {
+        let before = (0..<15).map { icon("d\($0)", "dell", Double($0), 1) } + [icon("h", "hp", 1, 1)]
+        let after = (0..<15).map { icon("d\($0)", "dell", Double($0), 1) } + [icon("h", "dell", 99, 1)]
+        #expect(!SnapshotCheck.looksDisplaced(captured: after, previous: before, connectedDisplays: 2))
+    }
+
+    @Test func partlyMovedDisplayIsNotAPileUp() {
+        let before = [icon("a", "dell", 1, 1), icon("b", "hp", 1, 1), icon("c", "hp", 2, 2), icon("d", "hp", 3, 3)]
+        let after = [icon("a", "dell", 1, 1), icon("b", "dell", 3, 3), icon("c", "dell", 4, 4), icon("d", "hp", 3, 3)]
+        #expect(!SnapshotCheck.looksDisplaced(captured: after, previous: before, connectedDisplays: 2))
+    }
+
+    @Test func lockedProfileRefusesAutoSave() {
+        var profile = MonitorProfile(name: "Desk", signature: "s", displays: [])
+        #expect(AutoSavePolicy.mayWrite(to: profile))
+        profile.isLocked = true
+        #expect(!AutoSavePolicy.mayWrite(to: profile))
+    }
+}

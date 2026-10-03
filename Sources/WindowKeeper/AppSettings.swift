@@ -21,6 +21,12 @@ final class AppSettings {
     var restoreOnLaunch: Bool { didSet { store(restoreOnLaunch, "restoreOnLaunch") } }
     /// Put an app's windows back when that app is opened again.
     var restoreOnAppRelaunch: Bool { didSet { store(restoreOnAppRelaunch, "restoreOnAppRelaunch") } }
+    /// Save and restore desktop icon positions along with windows. Needs Finder access.
+    var rememberDesktopIcons: Bool { didSet { store(rememberDesktopIcons, "rememberDesktopIcons") } }
+
+    /// Global shortcuts for Save All and Restore All. None by default.
+    var saveAllHotKey: HotKey? { didSet { storeHotKey(saveAllHotKey, "saveAllHotKey") } }
+    var restoreAllHotKey: HotKey? { didSet { storeHotKey(restoreAllHotKey, "restoreAllHotKey") } }
 
     /// Look for a newer release shortly after launch. Silent unless there is one.
     var checkForUpdatesAtLaunch: Bool { didSet { store(checkForUpdatesAtLaunch, "checkForUpdatesAtLaunch") } }
@@ -43,6 +49,7 @@ final class AppSettings {
             "restoreOnProfileDetected": true,
             "restoreOnLaunch": true,
             "restoreOnAppRelaunch": true,
+            "rememberDesktopIcons": true,
             "checkForUpdatesAtLaunch": true,
             "didOfferLaunchAtLogin": false,
         ])
@@ -52,9 +59,20 @@ final class AppSettings {
         restoreOnProfileDetected = defaults.bool(forKey: "restoreOnProfileDetected")
         restoreOnLaunch = defaults.bool(forKey: "restoreOnLaunch")
         restoreOnAppRelaunch = defaults.bool(forKey: "restoreOnAppRelaunch")
+        rememberDesktopIcons = defaults.bool(forKey: "rememberDesktopIcons")
         checkForUpdatesAtLaunch = defaults.bool(forKey: "checkForUpdatesAtLaunch")
         skippedUpdateVersion = defaults.string(forKey: "skippedUpdateVersion")
         didOfferLaunchAtLogin = defaults.bool(forKey: "didOfferLaunchAtLogin")
+        saveAllHotKey = Self.loadHotKey(defaults, "saveAllHotKey")
+        restoreAllHotKey = Self.loadHotKey(defaults, "restoreAllHotKey")
+    }
+
+    private static func loadHotKey(_ defaults: UserDefaults, _ key: String) -> HotKey? {
+        defaults.data(forKey: key).flatMap { try? JSONDecoder().decode(HotKey.self, from: $0) }
+    }
+
+    private func storeHotKey(_ value: HotKey?, _ key: String) {
+        if let value, let data = try? JSONEncoder().encode(value) { defaults.set(data, forKey: key) } else { defaults.removeObject(forKey: key) }
     }
 
     private func store(_ value: Any, _ key: String) { defaults.set(value, forKey: key) }

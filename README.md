@@ -18,6 +18,14 @@ after a restart, after sleep, when you dock at a different desk, or when an app 
   - when a known monitor setup with an external display is connected (docking, waking),
   - when WindowKeeper opens (at login after a restart),
   - when an app reopens: each window goes back as the app opens it.
+- **Desktop icons.** Icon positions are saved and restored with the windows, per desk —
+  including disks and servers, which go back to their spot whenever they mount again. Icons
+  are matched by file, so one renamed since the save is still found.
+- **Undo Last Restore** puts windows and icons back where they were just before the last
+  restore, automatic or not.
+- **Lock a profile** in Monitor Profiles: auto-save never changes a locked layout; Save Now
+  still does.
+- **Keyboard shortcuts** for Save All and Restore All, set in Settings, work from any app.
 - **iCloud.** Profiles are copied to `iCloud Drive/WindowKeeper/Macs/<this Mac>/`. Every Mac
   keeps its own folder; *Monitor Profiles › Import from Another Mac…* copies a profile across
   when you want it.
@@ -27,9 +35,14 @@ after a restart, after sleep, when you dock at a different desk, or when an app 
 
 Download `WindowKeeper.dmg` from the
 [latest release](https://github.com/smanke-org/WindowKeeper/releases/latest/download/WindowKeeper.dmg),
-drag WindowKeeper to Applications and open it. Then allow it under
-**System Settings › Privacy & Security › Accessibility** — that is how it reads and moves
-other apps' windows. Requires macOS 26 or later.
+drag WindowKeeper to Applications and open it. It needs two permissions:
+
+- **Accessibility** (System Settings › Privacy & Security › Accessibility) — to read and move
+  other apps' windows.
+- **Automation › Finder** — macOS asks the first time; it is how desktop icons are read and
+  moved. Turn *Remember desktop icon positions too* off in Settings if you don't want it.
+
+Requires macOS 26 or later.
 
 ## Good to know
 
@@ -39,6 +52,10 @@ other apps' windows. Requires macOS 26 or later.
   reopens* on, their windows go back whenever you open them.
 - After a restore, WindowKeeper keeps an eye on the windows for about 20 seconds and undoes
   moves made by the app or by macOS. If you drag a window during that time, it is yours.
+- Finder ignores icon positions while the desktop is sorted (View › Sort By); use *None* or
+  *Snap to Grid*. Settings warns when this is the case.
+- After monitors change, Finder reshuffles the desktop for a few seconds; WindowKeeper waits
+  for it to finish before putting icons back, and checks once more a few seconds later.
 - Automatic saves pause for a minute after monitors change and skip any snapshot where every
   window has piled onto one display, so the clutter macOS leaves while monitors reconnect is
   never saved as your layout.
@@ -52,6 +69,8 @@ other apps' windows. Requires macOS 26 or later.
 | Matching windows after a restart (title, then closest size) | `WindowMatcher` |
 | Placing windows, mapping between desks, keeping title bars reachable | `Placement` |
 | Guarding restored windows; respecting user drags | `RestoreSession`, `AppLaunchRestore` |
+| Desktop icons over Apple Events (`osascript`, off the main thread) | `FinderDesktop` |
+| Global shortcuts (Carbon hot keys) and the recorder | `HotKeys` |
 | Local + iCloud storage, import | `ProfileStore` |
 
 Pure logic lives in `WindowKeeperKit` and is covered by `swift test`.
@@ -70,4 +89,5 @@ swift test
 
 Launching with `WINDOWKEEPER_DEBUG=1` enables a test hook: a distributed notification
 named `com.smanke.WindowKeeper.debug` with object `save:<bundle id>`, `restore:<bundle id>`,
-`show:settings`, `show:profiles` or `dump:menu`.
+`show:settings`, `show:profiles`, `dump:menu`, `icons:save`, `icons:restore`, `undo:last`,
+`lock:on`/`lock:off` or `autosave:now`.

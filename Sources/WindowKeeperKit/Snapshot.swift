@@ -23,6 +23,27 @@ public enum SnapshotMerge {
     }
 }
 
+/// Folding a fresh read of the desktop into what a profile holds.
+public enum IconMerge {
+    /// The desktop is read whole, so the capture replaces the saved set — except volumes
+    /// that are not mounted right now, which keep their spot for when they come back.
+    /// Unchanged entries keep their `savedAt`, as with windows.
+    public static func merge(existing: [SavedIcon], captured: [SavedIcon]) -> [SavedIcon] {
+        var previous = existing
+        var fresh: [SavedIcon] = []
+        for var icon in captured {
+            if let i = previous.firstIndex(where: { $0.samePlace(as: icon) }) {
+                icon.savedAt = previous[i].savedAt
+                previous.remove(at: i)
+            }
+            fresh.append(icon)
+        }
+        let capturedVolumes = Set(captured.filter { $0.kind == .volume }.map(\.name))
+        let absentVolumes = existing.filter { $0.kind == .volume && !capturedVolumes.contains($0.name) }
+        return (fresh + absentVolumes).sorted { ($0.kind.rawValue, $0.name) < ($1.kind.rawValue, $1.name) }
+    }
+}
+
 /// Catches snapshots taken while macOS has piled windows onto one display.
 ///
 /// After sleep, monitors reconnect one at a time and macOS moves windows off whichever are
@@ -30,10 +51,28 @@ public enum SnapshotMerge {
 /// layout. Desktop Bins Widget lost bin positions this way twice.
 public enum SnapshotCheck {
     public static func looksDisplaced(captured: [SavedWindow], previous: [SavedWindow], connectedDisplays: Int) -> Bool {
+        looksDisplaced(captured: captured.map(\.displayKey), previous: previous.map(\.displayKey), connectedDisplays: connectedDisplays)
+    }
+
+    /// The icon version looks for Finder's evacuation pattern instead: when a display goes
+    /// away, *every* icon on it lands on one other display. Desktops are lopsided (most icons
+    /// usually sit on one screen), so the window rule would flag a user dragging their only
+    /// icon from a side screen — here one moved icon never counts, and a display that still
+    /// has some of its icons was not evacuated.
+    public static func looksDisplaced(captured: [SavedIcon], previous: [SavedIcon], connectedDisplays: Int) -> Bool {
+        guard connectedDisplays >= 2 else { return false }
+        let now = Dictionary(captured.map { ($0.name, $0.displayKey) }, uniquingKeysWith: { a, _ in a })
+        let moved = previous.filter { old in now[old.name].map { $0 != old.displayKey } ?? false }
+        guard moved.count >= 2, Set(moved.compactMap { now[$0.name] }).count == 1 else { return false }
+        let sources = Set(moved.map(\.displayKey))
+        let stayed = previous.filter { sources.contains($0.displayKey) && now[$0.name] == $0.displayKey }
+        return stayed.isEmpty
+    }
+
+    /// Takes the display key of each thing captured and each thing previously saved.
+    public static func looksDisplaced(captured: [String], previous: [String], connectedDisplays: Int) -> Bool {
         guard connectedDisplays >= 2, captured.count >= 3, previous.count >= 3 else { return false }
-        let before = Set(previous.map(\.displayKey))
-        let now = Set(captured.map(\.displayKey))
-        return before.count >= 2 && now.count == 1
+        return Set(previous).count >= 2 && Set(captured).count == 1
     }
 }
 
@@ -48,6 +87,11 @@ public enum IntervalUnit: String, Codable, CaseIterable, Sendable {
         case .hours: 3600
         }
     }
+}
+
+/// Whether an automatic save may write to a profile.
+public enum AutoSavePolicy {
+    public static func mayWrite(to profile: MonitorProfile) -> Bool { !profile.isLocked }
 }
 
 public enum SaveInterval {

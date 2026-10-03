@@ -28,12 +28,18 @@ final class StatusItemController: NSObject, NSMenuDelegate {
         updateIcon()
     }
 
-    /// A car's side window. Badged with "!" while Accessibility access is missing, since
-    /// nothing works without it.
+    /// A car's side window. Badged with "!" while a permission it needs is missing:
+    /// Accessibility (nothing works without it) or, with desktop icons on, Finder.
     func updateIcon() {
-        let symbol = keeper.isTrusted ? "car.window.right" : "car.window.right.exclamationmark"
+        let symbol = keeper.isTrusted && !finderBlocked ? "car.window.right" : "car.window.right.exclamationmark"
         statusItem.button?.image = NSImage(systemSymbolName: symbol, accessibilityDescription: "WindowKeeper")
     }
+
+    private var finderBlocked: Bool {
+        AppSettings.shared.rememberDesktopIcons && FinderDesktop.access == .denied
+    }
+
+    private var iconsOn: Bool { AppSettings.shared.rememberDesktopIcons }
 
     func menuNeedsUpdate(_ menu: NSMenu) {
         menu.removeAllItems()
@@ -46,24 +52,38 @@ final class StatusItemController: NSObject, NSMenuDelegate {
                 .toolTip = "WindowKeeper needs Accessibility access to read and move other apps' windows."
             menu.addItem(.separator())
         }
+        if finderBlocked {
+            menu.addItem(withTitle: "Allow Finder Access…", action: #selector(grantFinderAccess), target: self)
+                .toolTip = "WindowKeeper asks Finder to move desktop icons, which needs Automation › Finder."
+            menu.addItem(.separator())
+        }
 
         // Where we are.
         let profileName = keeper.currentProfile?.name ?? "Detecting monitors…"
-        menu.addItem(disabled: "Monitors: \(profileName)")
+        let lock = keeper.currentProfile?.isLocked == true ? "  🔒" : ""
+        menu.addItem(disabled: "Monitors: \(profileName)\(lock)")
         if let activity = keeper.lastActivity { menu.addItem(disabled: activity) }
         menu.addItem(.separator())
 
         // Save.
-        menu.addItem(withTitle: "Save All Windows Now", action: #selector(saveAll), keyEquivalent: "s", target: self)
+        menu.addItem(withTitle: iconsOn ? "Save All Windows & Icons Now" : "Save All Windows Now",
+                     action: #selector(saveAll), keyEquivalent: "s", target: self)
         let saveApp = menu.addItem(withTitle: "Save \(appLabel) Windows", action: #selector(saveFrontmost), target: self)
         saveApp.isEnabled = frontmost != nil
         menu.addItem(.separator())
 
         // Restore.
-        menu.addItem(withTitle: "Restore All Windows", action: #selector(restoreAll), keyEquivalent: "r", target: self)
+        menu.addItem(withTitle: iconsOn ? "Restore All Windows & Icons" : "Restore All Windows",
+                     action: #selector(restoreAll), keyEquivalent: "r", target: self)
         let restoreApp = menu.addItem(withTitle: "Restore \(appLabel) Windows", action: #selector(restoreFrontmost), target: self)
         restoreApp.isEnabled = frontmost != nil
+        if iconsOn {
+            let icons = menu.addItem(withTitle: "Restore Desktop Icons", action: #selector(restoreIcons), target: self)
+            icons.isEnabled = keeper.currentProfile?.icons.isEmpty == false
+        }
         menu.addItem(submenuTitled: "Restore from Profile", profilesMenu())
+        let undo = menu.addItem(withTitle: "Undo Last Restore", action: #selector(undoRestore), keyEquivalent: "z", target: self)
+        undo.isEnabled = keeper.undoSnapshot != nil
         menu.addItem(.separator())
 
         menu.addItem(withTitle: "Monitor Profiles…", action: #selector(showProfiles), target: self)
@@ -118,7 +138,7 @@ final class StatusItemController: NSObject, NSMenuDelegate {
             app.representedObject = profile.id
             app.isEnabled = frontmost != nil
             sub.addItem(.separator())
-            sub.addItem(disabled: "\(profile.windows.count) saved window(s)")
+            sub.addItem(disabled: "\(profile.windows.count) saved window(s), \(profile.icons.count) icon(s)")
 
             let item = menu.addItem(submenuTitled: profile.name, sub)
             item.state = profile.id == keeper.currentProfileID ? .on : .off
@@ -134,6 +154,9 @@ final class StatusItemController: NSObject, NSMenuDelegate {
         NSWorkspace.shared.open(URL(string: "x-apple.systempreferences:com.apple.preference.security?Privacy_Accessibility")!)
     }
 
+    @objc private func grantFinderAccess() { FinderDesktop.openAutomationSettings() }
+    @objc private func restoreIcons() { keeper.restoreIconsOnly() }
+    @objc private func undoRestore() { keeper.undoLastRestore() }
     @objc private func saveAll() { keeper.save(.all) }
     @objc private func restoreAll() { keeper.restore(.all) }
 
