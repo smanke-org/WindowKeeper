@@ -18,6 +18,8 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         settingsWindow = SettingsWindowController(keeper: keeper, launchAtLogin: launchAtLogin)
         profilesWindow = ProfilesWindowController(keeper: keeper)
         statusItem = StatusItemController(keeper: keeper, settingsWindow: settingsWindow, profilesWindow: profilesWindow)
+        NSApp.mainMenu = AppPresence.mainMenu(appName: "WindowKeeper", settingsTitle: "Settings…",
+                                              target: self, settings: #selector(showSettings))
 
         keeper.onNewProfile = { [weak self] profile in self?.notifier.announce(profile) }
         notifier.onOpen = { [weak self] id in self?.profilesWindow.show(highlight: id) }
@@ -44,6 +46,22 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
             // deliberate act by the user, never from a background timer.
             settingsWindow.show()
         }
+    }
+
+    /// The Dock icon's right-click menu, when "Show in Dock" is on.
+    func applicationDockMenu(_ sender: NSApplication) -> NSMenu? {
+        AppPresence.dockMenu(title: "Settings…", target: self, action: #selector(showSettings))
+    }
+
+    /// Clicking the Dock icon, or opening the app again from Applications or
+    /// Spotlight, opens Settings — the way back when both icons are hidden.
+    func applicationShouldHandleReopen(_ sender: NSApplication, hasVisibleWindows flag: Bool) -> Bool {
+        showSettings()
+        return true
+    }
+
+    @objc func showSettings() {
+        settingsWindow.show()
     }
 
     /// Keeps the menu bar icon's warning badge in step with the Accessibility permission.

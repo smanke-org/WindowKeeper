@@ -30,6 +30,7 @@ after a restart, after sleep, when you dock at a different desk, or when an app 
   keeps its own folder; *Monitor Profiles › Import from Another Mac…* copies a profile across
   when you want it.
 - Launch at login, and self-updates from GitHub releases (it asks first).
+- Choose where it appears: Dock, menu bar, both or neither (Settings › General). The Dock icon's right-click menu opens Settings; with both off, open WindowKeeper again from Applications to reach Settings.
 
 ## Install
 

@@ -1,4 +1,4 @@
-import Foundation
+import AppKit
 import Observation
 import WindowKeeperKit
 
@@ -27,6 +27,23 @@ final class AppSettings {
     /// Global shortcuts for Save All and Restore All. None by default.
     var saveAllHotKey: HotKey? { didSet { storeHotKey(saveAllHotKey, "saveAllHotKey") } }
     var restoreAllHotKey: HotKey? { didSet { storeHotKey(restoreAllHotKey, "restoreAllHotKey") } }
+
+    /// A Dock icon whose right-click menu opens Settings. Off by default.
+    var showInDock: Bool = AppPresence.showInDock {
+        didSet {
+            guard showInDock != AppPresence.showInDock else { return }
+            AppPresence.showInDock = showInDock
+            // Settings is the key window while its own toggle is clicked.
+            AppPresence.applyDock(keepInFront: NSApp.keyWindow)
+        }
+    }
+    /// The menu bar icon. On by default; may be off together with the Dock icon.
+    var showInMenuBar: Bool = AppPresence.showInMenuBar {
+        didSet {
+            guard showInMenuBar != AppPresence.showInMenuBar else { return }
+            AppPresence.showInMenuBar = showInMenuBar
+        }
+    }
 
     /// Look for a newer release shortly after launch. Silent unless there is one.
     var checkForUpdatesAtLaunch: Bool { didSet { store(checkForUpdatesAtLaunch, "checkForUpdatesAtLaunch") } }
