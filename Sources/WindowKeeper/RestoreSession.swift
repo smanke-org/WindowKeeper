@@ -27,6 +27,8 @@ final class RestoreSession {
     /// Sessions keep themselves alive until they finish: their observers hold an unretained
     /// pointer back to them, so one must never be freed while still registered.
     private static var running: [RestoreSession] = []
+    /// Windows are still being put back.
+    static var isActive: Bool { !running.isEmpty }
 
     /// Ends every session, before a new restore sets different targets.
     static func finishAll() {

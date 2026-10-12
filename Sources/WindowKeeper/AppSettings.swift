@@ -93,5 +93,20 @@ final class AppSettings {
     }
 
     private func store(_ value: Any, _ key: String) { defaults.set(value, forKey: key) }
+
+    /// Re-reads the synced settings after another Mac's were adopted.
+    func reload() {
+        autoSave = defaults.bool(forKey: "autoSave")
+        autoSaveValue = max(1, defaults.integer(forKey: "autoSaveValue"))
+        autoSaveUnit = IntervalUnit(rawValue: defaults.string(forKey: "autoSaveUnit") ?? "") ?? .minutes
+        restoreOnProfileDetected = defaults.bool(forKey: "restoreOnProfileDetected")
+        restoreOnLaunch = defaults.bool(forKey: "restoreOnLaunch")
+        restoreOnAppRelaunch = defaults.bool(forKey: "restoreOnAppRelaunch")
+        rememberDesktopIcons = defaults.bool(forKey: "rememberDesktopIcons")
+        saveAllHotKey = Self.loadHotKey(defaults, "saveAllHotKey")
+        restoreAllHotKey = Self.loadHotKey(defaults, "restoreAllHotKey")
+        if showInDock != AppPresence.showInDock { showInDock = AppPresence.showInDock }
+        if showInMenuBar != AppPresence.showInMenuBar { showInMenuBar = AppPresence.showInMenuBar }
+    }
     private func scheduleChanged() { onScheduleChange?() }
 }

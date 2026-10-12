@@ -14,6 +14,8 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     private var statusItem: StatusItemController!
 
     func applicationDidFinishLaunching(_ notification: Notification) {
+        // Before anything saves a setting: an empty domain means a brand-new install.
+        let newInstall = SettingsSync.domainIsEmpty()
         Diagnostics.note("launch \(AppInfo.displayVersion) from \(Bundle.main.bundlePath)")
         settingsWindow = SettingsWindowController(keeper: keeper, launchAtLogin: launchAtLogin)
         profilesWindow = ProfilesWindowController(keeper: keeper)
@@ -36,11 +38,15 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         HotKeyCenter.shared.apply()
 
         launchAtLogin.enableOnFirstRun()
-        if AppSettings.shared.checkForUpdatesAtLaunch {
-            // Deferred so startup is not waiting on the network; silent unless there is
-            // something to offer, and even then it only adds a menu item.
-            DispatchQueue.main.asyncAfter(deadline: .now() + 6) { UpdateController.checkForUpdates(silent: true) }
+        // An automatic update must not restart WindowKeeper while it is putting windows back.
+        AutoUpdater.shared.appBusyReason = { RestoreSession.isActive ? "windows are being restored" : nil }
+        SettingsSync.shared.onApply = {
+            AppSettings.shared.reload()
+            HotKeyCenter.shared.apply()
         }
+        if newInstall { SettingsSync.shared.adoptOnNewInstall() }
+        SettingsSync.shared.start()
+        AutoUpdater.shared.start()
         if !keeper.isTrusted {
             // First run: show why nothing will happen yet. Opened at launch, which is a
             // deliberate act by the user, never from a background timer.

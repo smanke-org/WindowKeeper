@@ -94,7 +94,9 @@ final class StatusItemController: NSObject, NSMenuDelegate {
         menu.addItem(.separator())
 
         menu.addItem(withTitle: "Monitor Profiles…", action: #selector(showProfiles), target: self)
-        if let pending = UpdateAvailability.shared.pending {
+        if let staged = AutoUpdater.shared.staged {
+            menu.addItem(withTitle: "Update to \(staged.version) Now", action: #selector(installStagedUpdate), target: self)
+        } else if let pending = UpdateAvailability.shared.pending {
             menu.addItem(withTitle: "Update to \(pending)…", action: #selector(checkForUpdates), target: self)
                 .toolTip = "A newer release is available. Installing it needs your confirmation."
         } else {
@@ -189,6 +191,8 @@ final class StatusItemController: NSObject, NSMenuDelegate {
 
     @objc private func showProfiles() { profilesWindow.show() }
     @objc private func showSettings() { settingsWindow.show() }
+    @objc private func installStagedUpdate() { AutoUpdater.shared.installNow() }
+
     @objc private func checkForUpdates() { UpdateController.checkForUpdates() }
     @objc private func quit() { NSApp.terminate(nil) }
 }

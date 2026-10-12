@@ -82,13 +82,26 @@ Requires macOS 26 or later. Signed with Developer ID and notarized by Apple.
 
 ## Updates
 
-WindowKeeper checks GitHub for a new release shortly after it opens. If there is one, the menu
-shows *Update to …*, and nothing is installed until you click it and confirm. You can also
-choose *Check for Updates…* at any time. To stop the automatic check, turn off
-*Check for updates when WindowKeeper opens* in Settings.
+WindowKeeper checks GitHub for a new release shortly after it opens and every 30 minutes. In
+Settings you choose what happens when it finds one:
+
+- **Ask me first** (the default): a notification and *Update to …* in the menu; nothing installs
+  until you click it and confirm.
+- **Install automatically**: the update is downloaded and checked right away, then installed
+  once windows aren't being restored, no app is presenting or keeping the display awake, and
+  the Mac hasn't been used for 2 minutes.
+- **Don't check**: *Check for Updates…* in the menu still works.
 
 Before installing, WindowKeeper makes sure the download is signed by the same developer and
 notarized by Apple. It updates the app in place, so your Accessibility permission carries over.
+
+## Settings sync
+
+Turn on *Sync settings with your other Macs* in Settings and auto-save, the restore options,
+keyboard shortcuts and where WindowKeeper appears follow you to every Mac on the same iCloud
+account, through `iCloud Drive/WindowKeeper/Settings.plist`. Window profiles stay with each
+Mac's monitors, as before. A brand-new install that finds this file turns sync on and starts
+from your settings.
 
 ## How it works
 
