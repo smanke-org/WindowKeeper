@@ -103,6 +103,8 @@ final class StatusItemController: NSObject, NSMenuDelegate {
             menu.addItem(withTitle: "Check for Updates…", action: #selector(checkForUpdates), target: self)
         }
         menu.addItem(withTitle: "Settings…", action: #selector(showSettings), keyEquivalent: ",", target: self)
+        menu.addItem(withTitle: "About WindowKeeper", action: #selector(showAbout), target: self)
+        menu.addItem(withTitle: "Our other apps…", action: #selector(showOtherApps), target: self)
         menu.addItem(.separator())
         menu.addItem(withTitle: "Quit WindowKeeper", action: #selector(quit), keyEquivalent: "q", target: self)
         menu.addItem(.separator())
@@ -195,6 +197,14 @@ final class StatusItemController: NSObject, NSMenuDelegate {
 
     @objc private func checkForUpdates() { UpdateController.checkForUpdates() }
     @objc private func quit() { NSApp.terminate(nil) }
+    @objc private func showAbout() {
+        NSApp.activate(ignoringOtherApps: true)
+        NSApp.orderFrontStandardAboutPanel(nil)
+    }
+    /// The developer's site, which lists every app.
+    @objc private func showOtherApps() {
+        if let url = URL(string: "https://stevemanke.com/") { NSWorkspace.shared.open(url) }
+    }
 }
 
 private extension NSMenu {
