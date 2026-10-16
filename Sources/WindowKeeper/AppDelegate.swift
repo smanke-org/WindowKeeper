@@ -20,8 +20,13 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         settingsWindow = SettingsWindowController(keeper: keeper, launchAtLogin: launchAtLogin)
         profilesWindow = ProfilesWindowController(keeper: keeper)
         statusItem = StatusItemController(keeper: keeper, settingsWindow: settingsWindow, profilesWindow: profilesWindow)
-        NSApp.mainMenu = AppPresence.mainMenu(appName: "WindowKeeper", settingsTitle: "Settings…",
-                                              target: self, settings: #selector(showSettings))
+        let mainMenu = AppPresence.mainMenu(appName: "WindowKeeper", settingsTitle: "Settings…",
+                                            target: self, settings: #selector(showSettings))
+        // Right below About in the app menu.
+        let otherApps = NSMenuItem(title: "Our other apps…", action: #selector(showOtherApps), keyEquivalent: "")
+        otherApps.target = self
+        mainMenu.items.first?.submenu?.insertItem(otherApps, at: 1)
+        NSApp.mainMenu = mainMenu
 
         keeper.onNewProfile = { [weak self] profile in self?.notifier.announce(profile) }
         notifier.onOpen = { [weak self] id in self?.profilesWindow.show(highlight: id) }
@@ -68,6 +73,11 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
 
     @objc func showSettings() {
         settingsWindow.show()
+    }
+
+    /// The developer's site, which lists every app.
+    @objc func showOtherApps() {
+        if let url = URL(string: "https://stevemanke.com/") { NSWorkspace.shared.open(url) }
     }
 
     /// Keeps the menu bar icon's warning badge in step with the Accessibility permission.
