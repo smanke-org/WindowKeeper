@@ -71,6 +71,26 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         return true
     }
 
+    /// `windowkeeper://` URLs (from ToolHUD, Shortcuts or a script) run the menu's actions.
+    /// The app in front when the URL arrives is the "current app" for save-app and
+    /// restore-app, as it is for the menu.
+    func application(_ application: NSApplication, open urls: [URL]) {
+        let candidate = NSWorkspace.shared.frontmostApplication
+        let frontmost = candidate?.bundleIdentifier == Bundle.main.bundleIdentifier ? nil : candidate
+        for url in urls where url.scheme == "windowkeeper" {
+            switch url.host {
+            case "save": keeper.save(.all)
+            case "restore": keeper.restore(.all)
+            case "save-app": if let frontmost { keeper.save(.app(frontmost)) }
+            case "restore-app": if let frontmost { keeper.restore(.app(frontmost)) }
+            case "restore-icons": keeper.restoreIconsOnly()
+            case "undo": keeper.undoLastRestore()
+            case "profiles": profilesWindow.show(highlight: keeper.currentProfileID)
+            default: settingsWindow.show()
+            }
+        }
+    }
+
     @objc func showSettings() {
         settingsWindow.show()
     }
