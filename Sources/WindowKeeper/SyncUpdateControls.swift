@@ -33,6 +33,9 @@ struct SyncUpdateControls: View {
                 ForEach(UpdatePolicy.allCases, id: \.self) { Text($0.title).tag($0) }
             }
             .padding(.top, 6)
+            if updater.policy != .off {
+                UpdateIntervalPicker(interval: $updater.interval, label: "Check every:")
+            }
             if let staged = updater.staged {
                 HStack {
                     Text("Version \(staged.version) is ready.").font(.caption)
@@ -66,9 +69,9 @@ struct SyncUpdateControls: View {
     private var updateFooter: String {
         switch updater.policy {
         case .automatic:
-            return "WindowKeeper checks every 30 minutes. A new version installs itself when windows aren't being restored, no app is presenting or keeping the screen awake, and your Mac hasn't been used for 2 minutes. You'll get a notification when it's done."
+            return "WindowKeeper checks \(updater.interval.phrase). A new version installs itself when windows aren't being restored, no app is presenting or keeping the screen awake, and your Mac hasn't been used for 2 minutes. You'll get a notification when it's done."
         case .ask:
-            return "WindowKeeper checks every 30 minutes and sends a notification when a new version is out. Nothing installs until you choose to."
+            return "WindowKeeper checks \(updater.interval.phrase) and sends a notification when a new version is out. Nothing installs until you choose to."
         case .off:
             return "WindowKeeper won't look for updates on its own. Use Check Now whenever you like."
         }

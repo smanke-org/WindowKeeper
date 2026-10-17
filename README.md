@@ -84,7 +84,7 @@ Requires macOS 26 or later. Signed with Developer ID and notarized by Apple.
 
 ## Updates
 
-WindowKeeper checks GitHub for a new release shortly after it opens and every 30 minutes. In
+WindowKeeper checks GitHub for a new release once a day, or as often as you choose in Settings (a number of hours, days, weeks or months). In
 Settings you choose what happens when it finds one:
 
 - **Ask me first** (the default): a notification and *Update to …* in the menu; nothing installs
