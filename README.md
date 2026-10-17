@@ -56,6 +56,8 @@ Requires macOS 26 or later. Signed with Developer ID and notarized by Apple.
 - **Lock a profile** in Monitor Profiles: auto-save never changes a locked layout. Save Now
   still does.
 - **Keyboard shortcuts** for Save All and Restore All, set in Settings, work from any app.
+- **URLs** for ToolHUD, Shortcuts or scripts: `windowkeeper://save`, `restore`, `save-app`,
+  `restore-app` (the app in front), `restore-icons`, `undo` and `profiles`.
 - **iCloud.** Profiles are copied to `iCloud Drive/WindowKeeper/Macs/<this Mac>/`. Each Mac
   keeps its own folder. To copy a profile from another Mac, use
   *Monitor Profiles › Import from Another Mac…*.
