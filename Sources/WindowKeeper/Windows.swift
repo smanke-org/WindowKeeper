@@ -12,18 +12,41 @@ class HostedWindowController: NSObject, NSWindowDelegate {
         self.title = title
     }
 
-    func present<V: View>(_ view: V, resizable: Bool = false) {
-        if let window {
-            window.contentViewController = NSHostingController(rootView: view)
+    /// With `scrolls`, the window opens at the view's natural height but never taller than
+    /// the screen (a MacBook Air couldn't fit Settings), and the content scrolls when cut short.
+    /// The window is sized here rather than by SwiftUI: letting SwiftUI size a window that
+    /// AppKit then clamps to the screen loops until AppKit aborts.
+    func present<V: View>(_ view: V, resizable: Bool = false, scrolls: Bool = false) {
+        let controller: NSViewController
+        var size: NSSize?
+        if scrolls {
+            let natural = NSHostingView(rootView: view).fittingSize
+            let screen = (window?.screen ?? NSScreen.main)?.visibleFrame.size ?? natural
+            size = NSSize(width: natural.width, height: min(natural.height, max(screen.height - 80, 240)))
+            let hosting = NSHostingController(rootView: ScrollView(.vertical) { view }.frame(maxHeight: .infinity))
+            hosting.sizingOptions = []
+            controller = hosting
         } else {
-            let window = NSWindow(contentViewController: NSHostingController(rootView: view))
+            controller = NSHostingController(rootView: view)
+        }
+        let isNew = window == nil
+        if let window {
+            window.contentViewController = controller
+        } else {
+            let window = NSWindow(contentViewController: controller)
             window.title = title
-            window.styleMask = resizable ? [.titled, .closable, .resizable] : [.titled, .closable]
+            window.styleMask = resizable || scrolls ? [.titled, .closable, .resizable] : [.titled, .closable]
             window.isReleasedWhenClosed = false
             window.delegate = self
-            window.center()
             self.window = window
         }
+        if let size, let window {
+            window.setContentSize(size)
+            // Fixed width; the height can shrink to scroll or grow back to the full content.
+            window.contentMinSize = NSSize(width: size.width, height: 200)
+            window.contentMaxSize = NSSize(width: size.width, height: .greatestFiniteMagnitude)
+        }
+        if isNew { window?.center() }
         NSApp.activate(ignoringOtherApps: true)
         window?.makeKeyAndOrderFront(nil)
     }
@@ -45,7 +68,7 @@ final class SettingsWindowController: HostedWindowController {
     }
 
     func show() {
-        present(SettingsView(settings: .shared, launchAtLogin: launchAtLogin, store: keeper.store, keeper: keeper))
+        present(SettingsView(settings: .shared, launchAtLogin: launchAtLogin, store: keeper.store, keeper: keeper), scrolls: true)
     }
 }
 
