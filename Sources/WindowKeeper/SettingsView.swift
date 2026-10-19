@@ -119,11 +119,15 @@ struct SettingsView: View {
 
             Divider()
 
-            HStack {
-                Spacer()
+            // The version in the middle, the round Help button in the corner, as macOS does.
+            ZStack {
                 Text("WindowKeeper \(AppInfo.displayVersion)")
                     .font(.caption)
                     .foregroundStyle(.secondary)
+                HStack {
+                    Spacer()
+                    HelpButton(topic: "getting-started").fixedSize()
+                }
             }
         }
         .padding(20)

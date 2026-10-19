@@ -102,6 +102,8 @@ final class StatusItemController: NSObject, NSMenuDelegate {
         } else {
             menu.addItem(withTitle: "Check for Updates…", action: #selector(checkForUpdates), target: self)
         }
+        menu.addItem(withTitle: "WindowKeeper Help", action: #selector(showHelp), target: self)
+            .image = NSImage(systemSymbolName: "questionmark.circle", accessibilityDescription: nil)
         menu.addItem(withTitle: "Settings…", action: #selector(showSettings), keyEquivalent: ",", target: self)
         menu.addItem(withTitle: "About WindowKeeper", action: #selector(showAbout), target: self)
         menu.addItem(withTitle: "Our other apps…", action: #selector(showOtherApps), target: self)
@@ -192,6 +194,8 @@ final class StatusItemController: NSObject, NSMenuDelegate {
     }
 
     @objc private func showProfiles() { profilesWindow.show() }
+    @objc func showHelp() { HelpWindow.shared.show() }
+
     @objc private func showSettings() { settingsWindow.show() }
     @objc private func installStagedUpdate() { AutoUpdater.shared.installNow() }
 
