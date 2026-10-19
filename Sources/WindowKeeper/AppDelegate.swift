@@ -17,6 +17,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         // Before anything saves a setting: an empty domain means a brand-new install.
         let newInstall = SettingsSync.domainIsEmpty()
         Diagnostics.note("launch \(AppInfo.displayVersion) from \(Bundle.main.bundlePath)")
+        AppAppearance.start()
         settingsWindow = SettingsWindowController(keeper: keeper, launchAtLogin: launchAtLogin)
         profilesWindow = ProfilesWindowController(keeper: keeper)
         statusItem = StatusItemController(keeper: keeper, settingsWindow: settingsWindow, profilesWindow: profilesWindow)

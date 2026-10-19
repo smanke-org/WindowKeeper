@@ -77,6 +77,10 @@ struct SettingsView: View {
             Divider()
 
             section("General") {
+                AppearancePicker()
+                    .fixedSize()
+                caption(AppAppearance.footer(appName: "WindowKeeper"))
+                    .padding(.bottom, 4)
                 Toggle("Open WindowKeeper at login", isOn: Binding(
                     get: { launchAtLogin.isEnabled },
                     set: { launchAtLogin.set($0) }

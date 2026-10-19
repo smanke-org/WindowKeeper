@@ -133,7 +133,7 @@ func drawSymbol(_ symbol: String, in tile: CGRect, includeName: Bool, ctx: CGCon
     func font(_ size: CGFloat) -> NSFont { NSFont.systemFont(ofSize: size, weight: .bold) }
     func line(_ text: String, _ size: CGFloat) -> CTLine {
         CTLineCreateWithAttributedString(NSAttributedString(string: text, attributes: [
-            .font: font(size), .foregroundColor: NSColor.black,
+            .font: font(size), .foregroundColor: NSColor.white,
         ]))
     }
     func ink(_ text: String, _ size: CGFloat) -> CGRect {
