@@ -35,6 +35,7 @@ final class SettingsSync: ObservableObject {
     static let keys = [
         "showInDock",
         "showInMenuBar",
+        MenuHub.foldKey,
         AppAppearance.key,
         "autoSave",
         "autoSaveValue",
@@ -51,7 +52,7 @@ final class SettingsSync: ObservableObject {
     /// registered default. Uploading these too means a Mac adopting the file never mistakes
     /// "at its default" for "missing".
     private static let fallbacks: [String: Any] = [
-        "showInDock": false, "showInMenuBar": true, AppAppearance.key: AppAppearance.system.rawValue
+        "showInDock": false, "showInMenuBar": true, MenuHub.foldKey: true, AppAppearance.key: AppAppearance.system.rawValue
     ]
 
     private var localModified: Date? {

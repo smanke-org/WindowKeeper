@@ -27,12 +27,22 @@ final class StatusItemController: NSObject, NSMenuDelegate {
         statusItem.menu = menu
         updateIcon()
 
-        // Settings can hide the menu bar icon (the app then lives in the Dock, or nowhere).
-        statusItem.isVisible = AppPresence.showInMenuBar
+        // Settings can hide the menu bar icon (the app then lives in the Dock, or nowhere),
+        // and ToolHUD can take the menu into its own while it runs.
+        statusItem.isVisible = MenuHub.shared.showsOwnIcon
         NotificationCenter.default.addObserver(forName: AppPresence.menuBarDidChange, object: nil,
                                                queue: .main) { [weak self] _ in
-            MainActor.assumeIsolated { self?.statusItem.isVisible = AppPresence.showInMenuBar }
+            MainActor.assumeIsolated { self?.statusItem.isVisible = MenuHub.shared.showsOwnIcon }
         }
+        MenuHub.shared.start(menu: { [weak self] in
+            let menu = NSMenu()
+            menu.autoenablesItems = false
+            self?.menuNeedsUpdate(menu)
+            return menu
+        }, icon: { [weak self] in
+            self?.updateIcon()
+            return self?.statusItem.button?.image
+        })
     }
 
     /// A car's side window. Badged with "!" while a permission it needs is missing:

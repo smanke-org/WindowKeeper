@@ -107,6 +107,7 @@ final class AppSettings {
         restoreAllHotKey = Self.loadHotKey(defaults, "restoreAllHotKey")
         if showInDock != AppPresence.showInDock { showInDock = AppPresence.showInDock }
         if showInMenuBar != AppPresence.showInMenuBar { showInMenuBar = AppPresence.showInMenuBar }
+        MenuHub.shared.reload()
     }
     private func scheduleChanged() { onScheduleChange?() }
 }

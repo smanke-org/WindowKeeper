@@ -53,6 +53,7 @@ enum Help {
             .heading("Allow access"),
             .text("WindowKeeper needs Accessibility permission (macOS 27 calls it Device Control) to read and move other apps' windows. To remember desktop icons it also asks Finder for permission. The menu bar menu offers \"Allow Accessibility Access…\" or \"Allow Finder Access…\" when either is missing."),
             .tip("The menu bar menu's first line shows which monitor profile is active, and whether it's locked."),
+            .tip("While ToolHUD is running, WindowKeeper's menu moves into ToolHUD's menu bar menu as a submenu, and the icon here steps aside until ToolHUD quits. To keep the icon, turn off \"Put in ToolHUD's menu while ToolHUD is running\" in Settings."),
         ]),
 
         HelpTopic(id: "saving", title: "Saving and Restoring", symbol: "macwindow.on.rectangle", blocks: [
