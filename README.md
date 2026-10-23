@@ -136,3 +136,7 @@ Launching with `WINDOWKEEPER_DEBUG=1` enables a test hook. It listens for a dist
 notification named `com.smanke.WindowKeeper.debug` with one of these as its object:
 `save:<bundle id>`, `restore:<bundle id>`, `show:settings`, `show:profiles`, `dump:menu`,
 `icons:save`, `icons:restore`, `undo:last`, `lock:on`/`lock:off` or `autosave:now`.
+
+## License
+
+© 2026 Steve Manke. All rights reserved.
