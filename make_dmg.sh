@@ -69,6 +69,12 @@ diskutil image create from \
   --volumeName "${APP_NAME}" \
   "${STAGING}" \
   "${DMG_PATH}" >/dev/null
+# Never sign or publish an unreadable image (hdiutil's zlib images of HFS+ volumes are
+# corrupt on macOS 27.0.1; this APFS one isn't, but the check costs nothing).
+if ! hdiutil imageinfo "${DMG_PATH}" 2>/dev/null | grep -q "Format Description"; then
+  echo "The disk image came out unreadable; not signing or publishing it." >&2
+  exit 1
+fi
 
 if [ -n "${SIGN_IDENTITY}" ]; then
   echo "Signing the disk image with: ${SIGN_IDENTITY}"
