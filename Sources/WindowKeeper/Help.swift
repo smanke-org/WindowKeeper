@@ -54,6 +54,7 @@ enum Help {
             .text("WindowKeeper needs Accessibility permission (macOS 27 calls it Device Control) to read and move other apps' windows. To remember desktop icons it also asks Finder for permission. The menu bar menu offers \"Allow Accessibility Access…\" or \"Allow Finder Access…\" when either is missing."),
             .tip("The menu bar menu's first line shows which monitor profile is active, and whether it's locked."),
             .tip("While ToolHUD is running, WindowKeeper's menu moves into ToolHUD's menu bar menu as a submenu, and the icon here steps aside until ToolHUD quits. To keep the icon, turn off \"Put in ToolHUD's menu while ToolHUD is running\" in Settings."),
+            .tip("Quitting asks first, since windows aren't saved or put back while WindowKeeper is closed. Turn off \"Ask before quitting\" in Settings › General, or tick \"Don't ask again\" when it asks."),
         ]),
 
         HelpTopic(id: "saving", title: "Saving and Restoring", symbol: "macwindow.on.rectangle", blocks: [
@@ -92,6 +93,7 @@ enum Help {
 
         HelpTopic(id: "settings", title: "Settings and Sync", symbol: "gearshape", blocks: [
             .keys([
+                ("General", "Appearance, opening at login, asking before quitting, and the Dock and menu bar icons"),
                 ("Save automatically", "How often positions are saved"),
                 ("Restoring", "Which events put windows back"),
                 ("Keyboard Shortcuts", "Save all and restore all"),

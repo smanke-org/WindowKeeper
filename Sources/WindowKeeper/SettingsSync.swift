@@ -45,7 +45,8 @@ final class SettingsSync: ObservableObject {
         "restoreOnAppRelaunch",
         "rememberDesktopIcons",
         "saveAllHotKey",
-        "restoreAllHotKey", UpdatePolicy.key, UpdateInterval.valueKey, UpdateInterval.unitKey,
+        "restoreAllHotKey",
+        "confirmQuit", UpdatePolicy.key, UpdateInterval.valueKey, UpdateInterval.unitKey,
     ]
 
     /// What each setting is when this Mac has never changed it, for settings without a

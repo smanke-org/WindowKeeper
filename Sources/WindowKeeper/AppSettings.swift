@@ -45,6 +45,9 @@ final class AppSettings {
         }
     }
 
+    /// Quitting asks first, so a stray ⌘Q doesn't stop windows being saved and put back.
+    var confirmQuit: Bool { didSet { store(confirmQuit, "confirmQuit") } }
+
     /// Look for a newer release shortly after launch. Silent unless there is one.
     var checkForUpdatesAtLaunch: Bool { didSet { store(checkForUpdatesAtLaunch, "checkForUpdatesAtLaunch") } }
     /// A version the user chose to skip; the launch check stays quiet about it.
@@ -67,6 +70,7 @@ final class AppSettings {
             "restoreOnLaunch": true,
             "restoreOnAppRelaunch": true,
             "rememberDesktopIcons": true,
+            "confirmQuit": true,
             "checkForUpdatesAtLaunch": true,
             "didOfferLaunchAtLogin": false,
         ])
@@ -77,6 +81,7 @@ final class AppSettings {
         restoreOnLaunch = defaults.bool(forKey: "restoreOnLaunch")
         restoreOnAppRelaunch = defaults.bool(forKey: "restoreOnAppRelaunch")
         rememberDesktopIcons = defaults.bool(forKey: "rememberDesktopIcons")
+        confirmQuit = defaults.bool(forKey: "confirmQuit")
         checkForUpdatesAtLaunch = defaults.bool(forKey: "checkForUpdatesAtLaunch")
         skippedUpdateVersion = defaults.string(forKey: "skippedUpdateVersion")
         didOfferLaunchAtLogin = defaults.bool(forKey: "didOfferLaunchAtLogin")
@@ -103,6 +108,7 @@ final class AppSettings {
         restoreOnLaunch = defaults.bool(forKey: "restoreOnLaunch")
         restoreOnAppRelaunch = defaults.bool(forKey: "restoreOnAppRelaunch")
         rememberDesktopIcons = defaults.bool(forKey: "rememberDesktopIcons")
+        confirmQuit = defaults.bool(forKey: "confirmQuit")
         saveAllHotKey = Self.loadHotKey(defaults, "saveAllHotKey")
         restoreAllHotKey = Self.loadHotKey(defaults, "restoreAllHotKey")
         if showInDock != AppPresence.showInDock { showInDock = AppPresence.showInDock }

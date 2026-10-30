@@ -13,6 +13,36 @@ struct SettingsView: View {
         VStack(alignment: .leading, spacing: 16) {
             if !keeper.isTrusted { accessibilityWarning }
 
+            section("General") {
+                AppearancePicker()
+                    .fixedSize()
+                caption(AppAppearance.footer(appName: "WindowKeeper"))
+                    .padding(.bottom, 4)
+                Toggle("Open WindowKeeper at login", isOn: Binding(
+                    get: { launchAtLogin.isEnabled },
+                    set: { launchAtLogin.set($0) }
+                ))
+                if launchAtLogin.needsApproval {
+                    HStack {
+                        caption("Waiting for approval in Login Items.")
+                        Button("Open Login Items") { launchAtLogin.openLoginItemsSettings() }
+                            .controlSize(.small)
+                    }
+                }
+                Toggle("Ask before quitting", isOn: $settings.confirmQuit)
+                    .help("Quitting WindowKeeper asks first, so a stray ⌘Q doesn't stop windows being saved and put back.")
+                Toggle("Show in Dock", isOn: $settings.showInDock)
+                    .help("Adds a Dock icon whose right-click menu opens Settings.")
+                Toggle("Show in menu bar", isOn: $settings.showInMenuBar)
+                Toggle("Put in ToolHUD’s menu while ToolHUD is running", isOn: $hub.foldIntoToolHUD)
+                    .help("ToolHUD shows this menu as a submenu of its own, and WindowKeeper’s icon leaves the menu bar until ToolHUD quits.")
+                if !settings.showInDock && !settings.showInMenuBar {
+                    caption(AppPresence.hiddenEverywhereNote(appName: "WindowKeeper", settingsName: "Settings"))
+                }
+            }
+
+            Divider()
+
             section("Saving") {
                 Toggle("Save window positions automatically", isOn: $settings.autoSave)
                 HStack(spacing: 8) {
@@ -73,34 +103,6 @@ struct SettingsView: View {
                 shortcutRow("Save all", $settings.saveAllHotKey)
                 shortcutRow("Restore all", $settings.restoreAllHotKey)
                 caption("Work from any app. Click a box and press the keys; Delete clears it.")
-            }
-
-            Divider()
-
-            section("General") {
-                AppearancePicker()
-                    .fixedSize()
-                caption(AppAppearance.footer(appName: "WindowKeeper"))
-                    .padding(.bottom, 4)
-                Toggle("Open WindowKeeper at login", isOn: Binding(
-                    get: { launchAtLogin.isEnabled },
-                    set: { launchAtLogin.set($0) }
-                ))
-                if launchAtLogin.needsApproval {
-                    HStack {
-                        caption("Waiting for approval in Login Items.")
-                        Button("Open Login Items") { launchAtLogin.openLoginItemsSettings() }
-                            .controlSize(.small)
-                    }
-                }
-                Toggle("Show in Dock", isOn: $settings.showInDock)
-                    .help("Adds a Dock icon whose right-click menu opens Settings.")
-                Toggle("Show in menu bar", isOn: $settings.showInMenuBar)
-                Toggle("Put in ToolHUD’s menu while ToolHUD is running", isOn: $hub.foldIntoToolHUD)
-                    .help("ToolHUD shows this menu as a submenu of its own, and WindowKeeper’s icon leaves the menu bar until ToolHUD quits.")
-                if !settings.showInDock && !settings.showInMenuBar {
-                    caption(AppPresence.hiddenEverywhereNote(appName: "WindowKeeper", settingsName: "Settings"))
-                }
             }
 
             Divider()

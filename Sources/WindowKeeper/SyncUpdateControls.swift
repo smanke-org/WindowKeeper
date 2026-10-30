@@ -25,7 +25,7 @@ struct SyncUpdateControls: View {
                 }
                 .font(.caption)
             }
-            Text("Auto-save, restore options, keyboard shortcuts and where WindowKeeper appears follow you to every Mac signed in to the same iCloud account with sync turned on. Window profiles stay with each Mac's monitors.")
+            Text("Auto-save, restore options, keyboard shortcuts, asking before quitting and where WindowKeeper appears follow you to every Mac signed in to the same iCloud account with sync turned on. Window profiles stay with each Mac's monitors.")
                 .font(.caption).foregroundStyle(.secondary)
                 .fixedSize(horizontal: false, vertical: true)
 
