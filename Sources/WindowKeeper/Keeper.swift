@@ -10,6 +10,7 @@ final class Keeper {
     enum Scope {
         case all
         case app(NSRunningApplication)
+        case apps([NSRunningApplication])
     }
 
     let store: ProfileStore
@@ -34,10 +35,21 @@ final class Keeper {
     @ObservationIgnored private var launchRestores: [AppLaunchRestore] = []
     @ObservationIgnored private var hasSettledOnce = false
     @ObservationIgnored private var tokens: [NSObjectProtocol] = []
+    /// Where windows were a moment ago, refreshed every 2 s while the monitors are quiet.
+    @ObservationIgnored private var recentWindows: [WindowFrameSample] = []
+    /// `recentWindows` as it stood when the current burst of display changes began.
+    @ObservationIgnored private var windowsBeforeChange: [WindowFrameSample]?
+    @ObservationIgnored private var windowSampleTimer: Timer?
 
     /// After monitors change, automatic saves wait this long: macOS can still be moving
     /// windows back for a while after the last display event.
     private let quietPeriod: TimeInterval = 60
+    /// How long after monitors change a layout with every window on one display is taken
+    /// for macOS's pile-up. Later than this, the user put them there.
+    private let pileUpPeriod: TimeInterval = 30 * 60
+    /// Right after the displays wake, apps can answer with no windows at all. An automatic
+    /// restore tries those apps again after each of these waits (seconds).
+    private let unreadRetryDelays: [Double] = [2, 3, 5]
 
     init(store: ProfileStore) {
         self.store = store
@@ -73,6 +85,7 @@ final class Keeper {
         settings.onScheduleChange = { [weak self] in self?.scheduleAutoSave() }
         scheduleAutoSave()
         watchTrust()
+        startSamplingWindows()
         displaysChanged("launch")
 
         store.recoverFromCloudIfEmpty { [weak self] in
@@ -87,6 +100,7 @@ final class Keeper {
 
     private func displaysChanged(_ reason: String) {
         lastDisplayChange = Date()
+        if windowsBeforeChange == nil { windowsBeforeChange = recentWindows }
         tracker.reset()
         settleTimer?.invalidate()
         sampleDisplays()
@@ -130,6 +144,11 @@ final class Keeper {
         currentProfileID = profile.id
         Diagnostics.note("settled on \"\(profile.name)\" [\(signature)] changed=\(changed) disrupted=\(disrupted) new=\(isNew)")
 
+        let windowsNow = WindowServerFrames.current()
+        let movedPIDs = windowsBeforeChange.map { WindowShift.movedApps(before: $0, after: windowsNow) } ?? []
+        windowsBeforeChange = nil
+        recentWindows = windowsNow
+
         if isFirst, settings.rememberDesktopIcons, FinderDesktop.access == .unknown {
             // Ask Finder once now, so a first-run permission prompt appears at launch rather
             // than minutes later from the first auto-save.
@@ -142,10 +161,29 @@ final class Keeper {
             return
         }
         if isFirst {
-            if settings.restoreOnLaunch { restore(.all, from: profile, reason: "WindowKeeper opened", waitForFinder: true) }
+            if settings.restoreOnLaunch { restore(.all, from: profile, reason: "WindowKeeper opened", waitForFinder: true, retryUnread: true) }
         } else if (changed || disrupted), settings.restoreOnProfileDetected, profile.hasExternalDisplay {
-            restore(.all, from: profile, reason: changed ? "monitors connected" : "monitors reconnected", waitForFinder: true)
+            restore(.all, from: profile, reason: changed ? "monitors connected" : "monitors reconnected", waitForFinder: true, retryUnread: true)
+        } else if !movedPIDs.isEmpty, settings.restoreOnProfileDetected, profile.hasExternalDisplay {
+            // A monitor dropped out too briefly for the display samples to see, but macOS
+            // moved windows for it. Put back only those apps: the others were not touched.
+            let moved = AXWindows.managedApps().filter { movedPIDs.contains($0.processIdentifier) }
+            if !moved.isEmpty { restore(.apps(moved), from: profile, reason: "windows moved while monitors changed", retryUnread: true) }
         }
+    }
+
+    /// Keeps `recentWindows` current, so a display change can be compared with just before it.
+    private func startSamplingWindows() {
+        recentWindows = WindowServerFrames.current()
+        let timer = Timer(timeInterval: 2, repeats: true) { [weak self] _ in
+            MainActor.assumeIsolated {
+                guard let self, self.windowsBeforeChange == nil else { return }
+                self.recentWindows = WindowServerFrames.current()
+            }
+        }
+        timer.tolerance = 0.5
+        RunLoop.main.add(timer, forMode: .common)
+        windowSampleTimer = timer
     }
 
     // MARK: - Saving
@@ -160,7 +198,8 @@ final class Keeper {
         let now = Date()
         let (captured, replacing) = captureWindows(apps(in: scope), live: live, at: now)
 
-        if automatic, SnapshotCheck.looksDisplaced(captured: captured, previous: profile.windows, connectedDisplays: live.count) {
+        if automatic, now.timeIntervalSince(lastDisplayChange) < pileUpPeriod,
+           SnapshotCheck.looksDisplaced(captured: captured, previous: profile.windows, connectedDisplays: live.count) {
             Diagnostics.note("auto-save skipped: every window is on one display, which looks like macOS moved them")
             return nil
         }
@@ -344,6 +383,12 @@ final class Keeper {
         Diagnostics.note("debug: auto-save ran")
     }
 
+    /// Debug hook: acts as if a display-change notification just arrived, so a window moved
+    /// in the next 2 s is treated like one macOS moved during a brief monitor dropout.
+    func debugDisplaysChanged() {
+        displaysChanged("debug")
+    }
+
     private static var screenIsLocked: Bool {
         guard let session = CGSessionCopyCurrentDictionary() as? [String: Any] else { return false }
         return session["CGSSessionScreenIsLocked"] as? Bool ?? false
@@ -354,9 +399,11 @@ final class Keeper {
     /// Restores windows, and for `.all` the desktop icons as well.
     /// - `waitForFinder`: for automatic restores after monitors change; see `restoreIcons`.
     /// - `recordUndo`: off only when undoing, so Undo itself can't be undone into a loop.
+    /// - `retryUnread`: for automatic restores; apps that list no windows yet are tried
+    ///   again for a few seconds (after a wake, 15 restores in the log placed nothing).
     @discardableResult
     func restore(_ scope: Scope, from profile: MonitorProfile? = nil, reason: String = "menu",
-                 waitForFinder: Bool = false, recordUndo: Bool = true) -> Int? {
+                 waitForFinder: Bool = false, recordUndo: Bool = true, retryUnread: Bool = false) -> Int? {
         guard checkTrust(), let profile = profile ?? currentProfile else { return nil }
         RestoreSession.finishAll()
         let live = DisplayCatalog.current()
@@ -368,24 +415,60 @@ final class Keeper {
         }
 
         let session = RestoreSession(duration: 20)
+        let result = placeWindows(of: targetApps, from: profile, live: live, session: session)
+        if case .all = scope { restoreIcons(from: profile, waitForFinder: waitForFinder, recordUndo: recordUndo) }
+
+        let from = profile.id == currentProfileID ? "" : " from \(profile.name)"
+        lastActivity = "Restored \(result.placed) window(s)\(from) · \(Date().formatted(date: .omitted, time: .shortened))"
+        let unread = result.unread.isEmpty ? "" : ", \(result.unread.count) app(s) listed no windows"
+        Diagnostics.note("restore (\(reason)) from \"\(profile.name)\": placed \(result.placed), refused \(result.missed)\(unread)")
+        if retryUnread, !result.unread.isEmpty {
+            retryPlacing(result.unread, from: profile, session: session, placedSoFar: result.placed)
+        }
+        return result.placed
+    }
+
+    /// Moves each app's windows to their saved places. `unread` lists the apps that have
+    /// saved windows but showed none to place.
+    private func placeWindows(of apps: [NSRunningApplication], from profile: MonitorProfile, live: [LiveDisplay],
+                              session: RestoreSession) -> (placed: Int, missed: Int, unread: [NSRunningApplication]) {
         var placed = 0
         var missed = 0
-        for app in targetApps {
+        var unread: [NSRunningApplication] = []
+        for app in apps {
             let saved = profile.windows.filter { $0.bundleID == app.bundleIdentifier }
             guard !saved.isEmpty else { continue }
             let windows = AXWindows.windows(of: app.processIdentifier).filter(\.isPlaceable)
+            if windows.isEmpty { unread.append(app) }
             let pairs = WindowMatcher.match(live: windows.map { LiveWindowInfo(title: $0.title, size: $0.frame.size) }, saved: saved)
             for pair in pairs {
                 guard let target = Placement.target(for: saved[pair.saved], savedDisplays: profile.displays, live: live) else { continue }
                 if session.place(windows[pair.live].element, pid: app.processIdentifier, target: target) { placed += 1 } else { missed += 1 }
             }
         }
-        if case .all = scope { restoreIcons(from: profile, waitForFinder: waitForFinder, recordUndo: recordUndo) }
+        return (placed, missed, unread)
+    }
 
-        let from = profile.id == currentProfileID ? "" : " from \(profile.name)"
-        lastActivity = "Restored \(placed) window(s)\(from) · \(Date().formatted(date: .omitted, time: .shortened))"
-        Diagnostics.note("restore (\(reason)) from \"\(profile.name)\": placed \(placed), refused \(missed)")
-        return placed
+    /// Tries the apps that listed no windows again, into the same session, until they
+    /// answer or the waits run out. A newer restore ends the session, which stops this.
+    private func retryPlacing(_ apps: [NSRunningApplication], from profile: MonitorProfile, session: RestoreSession, placedSoFar: Int) {
+        Task {
+            var waiting = apps
+            var placed = 0
+            for delay in unreadRetryDelays {
+                try? await Task.sleep(for: .seconds(delay))
+                guard !session.isFinished else { return }
+                waiting.removeAll(where: \.isTerminated)
+                let result = placeWindows(of: waiting, from: profile, live: DisplayCatalog.current(), session: session)
+                placed += result.placed
+                waiting = result.unread
+                if waiting.isEmpty { break }
+            }
+            if placed > 0 {
+                lastActivity = "Restored \(placedSoFar + placed) window(s) · \(Date().formatted(date: .omitted, time: .shortened))"
+            }
+            Diagnostics.note("restore retry: placed \(placed) more\(waiting.isEmpty ? "" : ", \(waiting.count) app(s) still listed no windows")")
+        }
     }
 
     /// Puts windows (and icons) back where they were just before the last restore.
@@ -429,6 +512,7 @@ final class Keeper {
         switch scope {
         case .all: AXWindows.managedApps()
         case .app(let app): [app]
+        case .apps(let apps): apps
         }
     }
 

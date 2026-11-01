@@ -138,6 +138,19 @@ struct SnapshotTests {
         #expect(!SnapshotCheck.looksDisplaced(captured: after, previous: before, connectedDisplays: 1))
     }
 
+    @Test func appsNotRunningDoNotMakeAPileUp() {
+        // Everything open sits on the Dell, as saved; only closed apps' entries are elsewhere.
+        let before = [w("a", "dell", 1), w("b", "dell", 2), w("c", "dell", 3), w("closed1", "hp", 1), w("closed2", "builtin", 1)]
+        let after = [w("a", "dell", 1), w("b", "dell", 2), w("c", "dell", 3)]
+        #expect(!SnapshotCheck.looksDisplaced(captured: after, previous: before, connectedDisplays: 3))
+    }
+
+    @Test func pileUpAmongRunningAppsIsStillDetected() {
+        let before = [w("a", "dell", 1), w("b", "hp", 1), w("c", "hp", 2), w("closed", "builtin", 1)]
+        let after = [w("a", "dell", 1), w("b", "dell", 1), w("c", "dell", 2)]
+        #expect(SnapshotCheck.looksDisplaced(captured: after, previous: before, connectedDisplays: 3))
+    }
+
     @Test func intervalHasAFloor() {
         #expect(SaveInterval.seconds(value: 3, unit: .seconds) == 10)
         #expect(SaveInterval.seconds(value: 5, unit: .minutes) == 300)
@@ -239,5 +252,25 @@ struct DesktopIconTests {
         #expect(AutoSavePolicy.mayWrite(to: profile))
         profile.isLocked = true
         #expect(!AutoSavePolicy.mayWrite(to: profile))
+    }
+}
+
+struct WindowShiftTests {
+    private func sample(_ id: UInt32, _ pid: Int32, _ x: CGFloat, _ y: CGFloat, _ w: CGFloat, _ h: CGFloat) -> WindowFrameSample {
+        WindowFrameSample(id: id, pid: pid, frame: CGRect(x: x, y: y, width: w, height: h))
+    }
+
+    @Test func briefDropoutLeavesSafariFillingTheScreen() {
+        // Recorded on the office desk: the Dell dropped for a second and Safari came back
+        // filling it, while Outlook ended up where it started.
+        let before = [sample(2457, 10, 768, 386, 2303, 1774), sample(1461, 20, 591, 394, 2560, 1649)]
+        let after = [sample(2457, 10, 0, 30, 3840, 2130), sample(1461, 20, 591, 394, 2560, 1649)]
+        #expect(WindowShift.movedApps(before: before, after: after) == [10])
+    }
+
+    @Test func roundingAndNewWindowsAreNotMoves() {
+        let before = [sample(1, 10, 100, 100, 800, 600)]
+        let after = [sample(1, 10, 101, 99, 801, 600), sample(2, 30, 0, 0, 500, 500)]
+        #expect(WindowShift.movedApps(before: before, after: after).isEmpty)
     }
 }

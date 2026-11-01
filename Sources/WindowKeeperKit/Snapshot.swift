@@ -50,8 +50,13 @@ public enum IconMerge {
 /// briefly missing. An automatic save at that moment would record the pile-up as the
 /// layout. Desktop Bins Widget lost bin positions this way twice.
 public enum SnapshotCheck {
+    /// Only the captured apps' own saved entries count as "before": a profile also keeps the
+    /// windows of apps that are not running, and those sitting on other displays made every
+    /// one-display layout look like a pile-up, so auto-save stopped for good.
     public static func looksDisplaced(captured: [SavedWindow], previous: [SavedWindow], connectedDisplays: Int) -> Bool {
-        looksDisplaced(captured: captured.map(\.displayKey), previous: previous.map(\.displayKey), connectedDisplays: connectedDisplays)
+        let apps = Set(captured.map(\.bundleID))
+        let comparable = previous.filter { apps.contains($0.bundleID) }
+        return looksDisplaced(captured: captured.map(\.displayKey), previous: comparable.map(\.displayKey), connectedDisplays: connectedDisplays)
     }
 
     /// The icon version looks for Finder's evacuation pattern instead: when a display goes

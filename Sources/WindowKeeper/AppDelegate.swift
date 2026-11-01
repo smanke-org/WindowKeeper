@@ -183,7 +183,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     /// Development affordance, only with WINDOWKEEPER_DEBUG=1. A distributed notification
     /// whose object is "save:<bundle id>", "restore:<bundle id>", "show:settings",
     /// "show:profiles", "dump:menu", "icons:save", "icons:restore", "undo:last",
-    /// "lock:on|off" or "autosave:now" runs that action, so the installed, permission-holding
+    /// "lock:on|off", "autosave:now" or "displays:changed" runs that action, so the installed, permission-holding
     /// build can be tested against a throwaway app without driving the menu bar or touching
     /// anyone's real windows. Results go to the log.
     private func listenForDebugCommands() {
@@ -213,6 +213,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         case ("undo", "last"): keeper.undoLastRestore()
         case ("lock", let state): if let id = keeper.currentProfileID { keeper.setLocked(state == "on", profileID: id) }
         case ("autosave", "now"): keeper.debugAutoSave()
+        case ("displays", "changed"): keeper.debugDisplaysChanged()
         default: Diagnostics.note("debug: unknown command \(command)")
         }
     }
