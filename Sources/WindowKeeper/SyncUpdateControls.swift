@@ -45,6 +45,7 @@ struct SyncUpdateControls: View {
             }
             HStack {
                 Spacer()
+                Button("What's New…") { SettingsWindowController.shared?.showWhatsNew() }.controlSize(.small)
                 Button("Check Now") { UpdateController.checkForUpdates() }.controlSize(.small)
             }
             if let error = updater.lastError {

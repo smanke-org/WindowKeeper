@@ -136,7 +136,6 @@ struct SettingsView: View {
             }
         }
         .padding(20)
-        .frame(width: 460)
         .fixedSize(horizontal: false, vertical: true)
         .onAppear { launchAtLogin.refresh() }
     }

@@ -60,6 +60,11 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
             DebugQuitTest.run(how, settingsWindow: settingsWindow)
             return
         }
+        // The update prompt, What's New and Settings drawn to PNGs; starts nothing else.
+        if let folder = ProcessInfo.processInfo.environment["WINDOWKEEPER_DEBUG_UPDATE_NOTES"] {
+            DebugUpdateNotes.run(folder: folder, settingsWindow: settingsWindow)
+            return
+        }
         #endif
         keeper.onNewProfile = { [weak self] profile in self?.notifier.announce(profile) }
         notifier.onOpen = { [weak self] id in self?.profilesWindow.show(highlight: id) }
@@ -84,7 +89,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         }
         if newInstall { SettingsSync.shared.adoptOnNewInstall() }
         SettingsSync.shared.start()
-        AutoUpdater.shared.start()
+        AutoUpdater.shared.start(newInstall: newInstall)
         if !keeper.isTrusted {
             // First run: show why nothing will happen yet. Opened at launch, which is a
             // deliberate act by the user, never from a background timer.
