@@ -8,6 +8,8 @@ wherever macOS likes. Then you drag everything back by hand, every time. WindowK
 menu bar app that saves your layout for each monitor setup. It restores the layout after a
 restart, after sleep, when you dock at a different desk, or when an app reopens.
 
+<p align="center"><img src="docs/images/windowkeeper-profiles.webp" width="640" alt="The Monitor Profiles window listing three desks: Home Office, which is connected, Client Office and a locked Laptop Only, each with its monitors, window count and desktop icon count"></p>
+
 ---
 
 ## ⬇️ Download
@@ -64,6 +66,18 @@ Requires macOS 26 or later. Signed with Developer ID and notarized by Apple.
 - **Launch at login.**
 - **Dock, menu bar, both or neither** (Settings › General). Right-click the Dock icon to open
   Settings. With both off, open WindowKeeper again from Applications to reach Settings.
+
+## Screenshots
+
+<table>
+<tr>
+<td width="50%" align="center"><img src="docs/images/windowkeeper-menu.jpg" width="320" alt="The WindowKeeper menu showing the current monitor profile, save and restore commands for all windows or one app, Restore from Profile, Undo Last Restore and Monitor Profiles"><br><sub><b>The menu.</b> Save and restore everything or one app, or undo the last restore.</sub></td>
+<td width="50%"><img src="docs/images/windowkeeper-import.png" alt="The Import from Another Mac sheet listing a profile called Kitchen Table saved by a MacBook Air, with an Import button"><br><sub><b>Import from Another Mac.</b> Copy a desk's layout from another Mac over iCloud.</sub></td>
+</tr>
+<tr>
+<td width="50%" align="center"><img src="docs/images/windowkeeper-settings.webp" width="320" alt="WindowKeeper Settings with saving, restoring, desktop icons, keyboard shortcuts, general options, iCloud sync and updates"><br><sub><b>Settings.</b> Auto-save, when to restore, desktop icons and shortcuts.</sub></td>
+</tr>
+</table>
 
 ## Good to know
 
