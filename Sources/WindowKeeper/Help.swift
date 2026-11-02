@@ -69,11 +69,12 @@ enum Help {
             .heading("Automatic restores"),
             .keys([
                 ("A known monitor setup connects", "Docking at a desk WindowKeeper has seen, or waking with its monitors attached"),
+                ("A monitor drops out for a moment", "Only the apps whose windows macOS moved off it go back"),
                 ("WindowKeeper opens", "Usually at login after a restart"),
                 ("An app reopens", "Each window goes back as the app opens it"),
             ]),
             .text("After a restore, WindowKeeper watches the windows for a little while and undoes moves an app makes on its own. If you drag a window during that time, it leaves it where you put it. Apps that aren't running are skipped, never opened."),
-            .tip("Set the shortcuts in Settings › Keyboard Shortcuts."),
+            .tip("Set the shortcuts in Settings › Keyboard Shortcuts. ShortcutsLens lists them too."),
         ]),
 
         HelpTopic(id: "profiles", title: "Monitor Profiles", symbol: "display.2", blocks: [

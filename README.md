@@ -44,7 +44,8 @@ Requires macOS 26 or later. Signed with Developer ID and notarized by Apple.
 - **Restore** all windows, or just the frontmost app's, from the current profile or any other
   saved one. Windows from another desk are mapped onto this desk's monitors left to right.
 - **Automatic restore** happens in three cases, and each can be switched off in Settings:
-  - when a known monitor setup with an external display is connected (docking, waking),
+  - when a known monitor setup with an external display is connected (docking, waking), or
+    drops out for a moment and macOS moves windows off it (only those apps go back),
   - when WindowKeeper opens (at login after a restart),
   - when an app reopens: each window goes back as the app opens it.
 
@@ -92,9 +93,10 @@ Requires macOS 26 or later. Signed with Developer ID and notarized by Apple.
   *Snap to Grid*. Settings warns you when the desktop is sorted.
 - After monitors change, Finder spends a few seconds rearranging the desktop. WindowKeeper
   waits for it to finish before putting icons back, and checks once more a few seconds later.
-- Automatic saves pause for a minute after monitors change. They also skip any snapshot where
-  every window has piled onto one display. So the clutter macOS leaves while monitors
-  reconnect is never saved as your layout.
+- Automatic saves pause for a minute after monitors change. For half an hour after that, they
+  also skip any snapshot where every window has piled onto one display. So the clutter macOS
+  leaves while monitors reconnect is never saved as your layout, but working on one monitor
+  later still is.
 
 ## Updates
 
@@ -102,7 +104,7 @@ WindowKeeper checks GitHub for a new release once a day, or as often as you choo
 Settings you choose what happens when it finds one:
 
 - **Ask me first** (the default): a notification and *Update to …* in the menu; nothing installs
-  until you click it and confirm.
+  until you click it and confirm. The update window shows what's new in the latest releases.
 - **Install automatically**: the update is downloaded and checked right away, then installed
   once windows aren't being restored, no app is presenting or keeping the display awake, and
   the Mac hasn't been used for 2 minutes.
