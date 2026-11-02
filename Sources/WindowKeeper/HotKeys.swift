@@ -77,6 +77,18 @@ final class HotKeyCenter {
                 Diagnostics.note("hotkey \(key.display) for \(action) not registered (\(status)) — probably taken by another app")
             }
         }
+        ShortcutsLensReport.publish()
+    }
+
+    /// For ShortcutsLens: the shortcuts that registered, named as Settings names them.
+    var reportedShortcuts: [ShortcutsLensReport.Shortcut] {
+        let settings = AppSettings.shared
+        return Action.allCases.compactMap { action in
+            guard refs[action] != nil,
+                  let key = action == .saveAll ? settings.saveAllHotKey : settings.restoreAllHotKey else { return nil }
+            return .init(id: "\(action)", title: action == .saveAll ? "Save all" : "Restore all",
+                         keyCode: Int(key.keyCode), carbonModifiers: Int(key.modifiers))
+        }
     }
 
     /// While a shortcut is being recorded, the current ones must not fire.

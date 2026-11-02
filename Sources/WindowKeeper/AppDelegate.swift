@@ -79,6 +79,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
             }
         }
         HotKeyCenter.shared.apply()
+        ShortcutsLensReport.start { HotKeyCenter.shared.reportedShortcuts }
 
         launchAtLogin.enableOnFirstRun()
         // An automatic update must not restart WindowKeeper while it is putting windows back.
