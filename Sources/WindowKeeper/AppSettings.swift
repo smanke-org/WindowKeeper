@@ -59,7 +59,8 @@ final class AppSettings {
     /// Called when anything affecting the auto-save timer changes.
     @ObservationIgnored var onScheduleChange: (() -> Void)?
 
-    private let defaults = UserDefaults.standard
+    /// An agent CLI test copy (Debug, APP_STORE) has a settings domain of its own.
+    private let defaults = AgentSocket.testDefaults ?? .standard
 
     private init() {
         defaults.register(defaults: [

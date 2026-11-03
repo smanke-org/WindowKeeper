@@ -383,6 +383,25 @@ final class Keeper {
         Diagnostics.note("debug: auto-save ran")
     }
 
+    #if DEBUG
+    /// Agent CLI test copy: takes the profile for the monitors connected now (adding it to the
+    /// test copy's own profiles if new) without waiting for them to settle and without the
+    /// restore that settling can start, since a test copy never moves windows.
+    func adoptDeskForAgentTest() {
+        let live = DisplayCatalog.current()
+        let signature = ProfileSignature.make(live.map(\.key))
+        if let existing = store.library.profile(withSignature: signature) {
+            currentProfileID = existing.id
+        } else {
+            let records = live.map(\.record)
+            let profile = MonitorProfile(name: store.library.uniqueName(ProfileSignature.defaultName(for: records)),
+                                         signature: signature, displays: records)
+            store.add(profile)
+            currentProfileID = profile.id
+        }
+    }
+    #endif
+
     /// Debug hook: acts as if a display-change notification just arrived, so a window moved
     /// in the next 2 s is treated like one macOS moved during a brief monitor dropout.
     func debugDisplaysChanged() {

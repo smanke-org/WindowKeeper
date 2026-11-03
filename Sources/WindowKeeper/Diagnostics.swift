@@ -13,6 +13,11 @@ enum Diagnostics {
     private static let maximumBytes = 256 * 1024
 
     private static let url: URL? = {
+        // An agent CLI test copy (Debug, APP_STORE) logs into its own folder.
+        if let folder = AgentSocket.testFolder {
+            try? FileManager.default.createDirectory(at: folder, withIntermediateDirectories: true)
+            return folder.appending(path: "WindowKeeper.log")
+        }
         guard let library = FileManager.default.urls(for: .libraryDirectory, in: .userDomainMask).first else { return nil }
         let logs = library.appending(path: "Logs", directoryHint: .isDirectory)
         try? FileManager.default.createDirectory(at: logs, withIntermediateDirectories: true)

@@ -98,6 +98,33 @@ Requires macOS 26 or later. Signed with Developer ID and notarized by Apple.
   leaves while monitors reconnect is never saved as your layout, but working on one monitor
   later still is.
 
+## Command line and AI agents
+
+WindowKeeper is also a command line tool, so scripts and AI agents (Claude Code, Codex) can see
+the current desk and the windows saved for it, save the layout now, rename, lock or delete
+profiles, pause auto-save and restore windows. Commands run in the open app, through the same
+code as the menu. Link it once to type `windowkeeper`:
+
+```bash
+ln -s /Applications/WindowKeeper.app/Contents/MacOS/WindowKeeper ~/.local/bin/windowkeeper
+```
+
+```bash
+windowkeeper help
+windowkeeper status --json
+windowkeeper profiles show 3f2a9c1e
+windowkeeper windows restore --app Safari          # shows what would move
+windowkeeper windows restore --app Safari --yes    # moves the windows
+```
+
+Every command takes `--json`. Restoring, undoing a restore and deleting a profile only show what
+they would do until you add `--yes`. For MCP apps such as Claude Desktop, the same commands are
+served by `/Applications/WindowKeeper.app/Contents/MacOS/WindowKeeper mcp`:
+
+```bash
+claude mcp add --scope user windowkeeper -- /Applications/WindowKeeper.app/Contents/MacOS/WindowKeeper mcp
+```
+
 ## Updates
 
 WindowKeeper checks GitHub for a new release once a day, or as often as you choose in Settings (a number of hours, days, weeks or months). In

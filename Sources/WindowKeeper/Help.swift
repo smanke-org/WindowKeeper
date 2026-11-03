@@ -123,6 +123,16 @@ enum Help {
                 ("windowkeeper://profiles", "Open Monitor Profiles"),
             ]),
             .text("Use these links from Shortcuts, scripts or a launcher. ToolHUD's WindowKeeper buttons use them."),
+            .heading("Command line and AI agents"),
+            .text("WindowKeeper is also a command line tool, so scripts and AI agents such as Claude Code or Codex can see the current desk and its saved windows, save the layout, rename, lock or delete profiles, pause auto-save and restore windows. Commands run in the open app, through the same code as the menu. Restoring, undoing a restore and deleting a profile only show what they would do until --yes is added."),
+            .keys([
+                ("windowkeeper help", "List every command and its options"),
+                ("windowkeeper status", "The current desk, its monitors and the last save or restore"),
+                ("windowkeeper profiles show <id>", "A profile's saved windows, app by app"),
+                ("windowkeeper windows save", "Save where windows are now"),
+                ("windowkeeper mcp", "Offer the same commands to MCP apps, such as Claude Desktop"),
+            ]),
+            .text("To type windowkeeper in Terminal, link it once: ln -s /Applications/WindowKeeper.app/Contents/MacOS/WindowKeeper ~/.local/bin/windowkeeper (with ~/.local/bin on your PATH). MCP apps take the full path to that program, followed by mcp."),
         ]),
 
         HelpTopic(id: "troubleshooting", title: "Troubleshooting", symbol: "wrench.and.screwdriver", blocks: [

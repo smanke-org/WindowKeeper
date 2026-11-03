@@ -19,12 +19,30 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     private let store = ProfileStore()
     private lazy var keeper = Keeper(store: store)
     private let launchAtLogin = LaunchAtLogin()
-    private let notifier = NewDeskNotifier()
+    /// Lazy, so an agent CLI test copy never sets itself up with Notification Center (a bare
+    /// Debug binary has no bundle for it); the app creates it early in launching.
+    private lazy var notifier = NewDeskNotifier()
     private var settingsWindow: SettingsWindowController!
     private var profilesWindow: ProfilesWindowController!
     private var statusItem: StatusItemController!
 
     func applicationDidFinishLaunching(_ notification: Notification) {
+        #if DEBUG
+        // A test run of the agent CLI (APP_STORE): its own profiles, settings and log, and the
+        // agent socket. Nothing else starts: no display, wake or app-launch observers, timers,
+        // menu bar item, shortcuts, sync, updater or login item, and it never moves a window.
+        if AgentSocket.isTestRun {
+            // Desktop icons would ask Finder over Apple Events.
+            AppSettings.shared.rememberDesktopIcons = false
+            keeper.adoptDeskForAgentTest()
+            AgentContext.keeper = keeper
+            let profiles = ProfilesWindowController(keeper: keeper)
+            profilesWindow = profiles
+            AgentContext.showProfiles = { profiles.show(highlight: $0) }
+            AgentSocket.listen { AgentRouter.handle($0) }
+            return
+        }
+        #endif
         // Before anything saves a setting: an empty domain means a brand-new install.
         let newInstall = SettingsSync.domainIsEmpty()
         Diagnostics.note("launch \(AppInfo.displayVersion) from \(Bundle.main.bundlePath)")
@@ -69,6 +87,11 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         keeper.onNewProfile = { [weak self] profile in self?.notifier.announce(profile) }
         notifier.onOpen = { [weak self] id in self?.profilesWindow.show(highlight: id) }
         keeper.start()
+        // `windowkeeper` and its MCP server talk to the app through this.
+        AgentContext.keeper = keeper
+        AgentContext.showProfiles = { [weak self] id in self?.profilesWindow.show(highlight: id) }
+        AgentContext.showSettings = { [weak self] in self?.showSettings() }
+        AgentSocket.listen { AgentRouter.handle($0) }
         observeTrust()
         listenForDebugCommands()
         FinderDesktop.onAccessChange = { [weak self] in self?.statusItem.updateIcon() }

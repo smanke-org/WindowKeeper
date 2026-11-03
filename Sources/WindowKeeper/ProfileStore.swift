@@ -38,6 +38,8 @@ final class ProfileStore {
     private static let ioQueue = DispatchQueue(label: "WindowKeeper.cloud", qos: .utility)
 
     nonisolated static let localURL: URL = {
+        // An agent CLI test copy (Debug, APP_STORE) keeps its profiles in its own folder.
+        if let folder = AgentSocket.testFolder { return folder.appending(path: "profiles.json") }
         let support = FileManager.default.urls(for: .applicationSupportDirectory, in: .userDomainMask)[0]
         return support.appending(path: "WindowKeeper/profiles.json")
     }()
@@ -142,7 +144,8 @@ final class ProfileStore {
             Diagnostics.note("could not write \(Self.localURL.path): \(error.localizedDescription)")
             return
         }
-        scheduleCloudWrite(data)
+        // A test copy's profiles stay in its folder, never in this Mac's iCloud copy.
+        if !AgentSocket.isTestRun { scheduleCloudWrite(data) }
     }
 
     /// Batched: a burst of edits becomes one upload.
