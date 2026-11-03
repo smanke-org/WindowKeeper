@@ -66,12 +66,12 @@ final class StatusItemController: NSObject, NSMenuDelegate {
 
         if !keeper.isTrusted {
             menu.addItem(withTitle: "Allow Accessibility Access…", action: #selector(grantAccess), target: self)
-                .toolTip = "WindowKeeper needs Accessibility access to read and move other apps' windows."
+                .showIcon("exclamationmark.triangle").toolTip = "WindowKeeper needs Accessibility access to read and move other apps' windows."
             menu.addItem(.separator())
         }
         if finderBlocked {
             menu.addItem(withTitle: "Allow Finder Access…", action: #selector(grantFinderAccess), target: self)
-                .toolTip = "WindowKeeper asks Finder to move desktop icons, which needs Automation › Finder."
+                .showIcon("exclamationmark.triangle").toolTip = "WindowKeeper asks Finder to move desktop icons, which needs Automation › Finder."
             menu.addItem(.separator())
         }
 
@@ -84,14 +84,14 @@ final class StatusItemController: NSObject, NSMenuDelegate {
 
         // Save.
         menu.addItem(withTitle: iconsOn ? "Save All Windows & Icons Now" : "Save All Windows Now",
-                     action: #selector(saveAll), keyEquivalent: "s", target: self)
+                     action: #selector(saveAll), keyEquivalent: "s", target: self).showIcon("square.and.arrow.down")
         let saveApp = menu.addItem(withTitle: "Save \(appLabel) Windows", action: #selector(saveFrontmost), target: self)
         saveApp.isEnabled = frontmost != nil
         menu.addItem(.separator())
 
         // Restore.
         menu.addItem(withTitle: iconsOn ? "Restore All Windows & Icons" : "Restore All Windows",
-                     action: #selector(restoreAll), keyEquivalent: "r", target: self)
+                     action: #selector(restoreAll), keyEquivalent: "r", target: self).showIcon("macwindow.on.rectangle")
         let restoreApp = menu.addItem(withTitle: "Restore \(appLabel) Windows", action: #selector(restoreFrontmost), target: self)
         restoreApp.isEnabled = frontmost != nil
         if iconsOn {
@@ -103,18 +103,21 @@ final class StatusItemController: NSObject, NSMenuDelegate {
         undo.isEnabled = keeper.undoSnapshot != nil
         menu.addItem(.separator())
 
-        menu.addItem(withTitle: "Monitor Profiles…", action: #selector(showProfiles), target: self)
+        menu.addItem(withTitle: "Monitor Profiles…", action: #selector(showProfiles), target: self).showIcon("display.2")
         if let staged = AutoUpdater.shared.staged {
             menu.addItem(withTitle: "Update to \(staged.version) Now", action: #selector(installStagedUpdate), target: self)
+                .showIcon("arrow.down.circle")
         } else if let pending = UpdateAvailability.shared.pending {
             menu.addItem(withTitle: "Update to \(pending)…", action: #selector(checkForUpdates), target: self)
-                .toolTip = "A newer release is available. Installing it needs your confirmation."
+                .showIcon("arrow.down.circle").toolTip = "A newer release is available. Installing it needs your confirmation."
         } else {
             menu.addItem(withTitle: "Check for Updates…", action: #selector(checkForUpdates), target: self)
+                .showIcon("arrow.down.circle")
         }
         menu.addItem(withTitle: "WindowKeeper Help", action: #selector(showHelp), target: self)
             .image = NSImage(systemSymbolName: "questionmark.circle", accessibilityDescription: nil)
         menu.addItem(withTitle: "Settings…", action: #selector(showSettings), keyEquivalent: ",", target: self)
+            .showIcon("gearshape")
         menu.addItem(withTitle: "About WindowKeeper", action: #selector(showAbout), target: self)
         menu.addItem(withTitle: "Our other apps…", action: #selector(showOtherApps), target: self)
         menu.addItem(.separator())
@@ -131,7 +134,7 @@ final class StatusItemController: NSObject, NSMenuDelegate {
             menu.items.flatMap { item -> [String] in
                 let indent = String(repeating: "    ", count: depth)
                 let mark = item.state == .on ? "✓ " : ""
-                let line = item.isSeparatorItem ? indent + "---" : indent + mark + item.title + (item.isEnabled ? "" : "  (disabled)")
+                let line = item.isSeparatorItem ? indent + "---" : indent + mark + item.plainTitle + (item.isEnabled ? "" : "  (disabled)")
                 return [line] + (item.submenu.map { lines($0, depth + 1) } ?? [])
             }
         }
