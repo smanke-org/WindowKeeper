@@ -216,7 +216,7 @@ final class StatusItemController: NSObject, NSMenuDelegate {
     @objc private func quit() { NSApp.terminate(nil) }
     @objc private func showAbout() {
         NSApp.activate(ignoringOtherApps: true)
-        NSApp.orderFrontStandardAboutPanel(nil)
+        AppInfo.showAbout()
     }
     /// The developer's site, which lists every app.
     @objc private func showOtherApps() {
