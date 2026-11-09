@@ -62,16 +62,30 @@ ln -s /Applications "${STAGING}/Applications"
 
 echo "Creating ${DMG_PATH}..."
 rm -f "${DMG_PATH}"
-# `diskutil image` replaces the deprecated hdiutil (macOS 26+, this app's minimum). It
-# builds an APFS volume, which the updater mounts with `diskutil image attach`.
-diskutil image create from \
-  --format UDZO \
-  --volumeName "${APP_NAME}" \
-  "${STAGING}" \
-  "${DMG_PATH}" >/dev/null
-# Never sign or publish an unreadable image (hdiutil's zlib images of HFS+ volumes are
-# corrupt on macOS 27.0.1; this APFS one isn't, but the check costs nothing).
-if ! hdiutil imageinfo "${DMG_PATH}" 2>/dev/null | grep -q "Format Description"; then
+# hdiutil, not `diskutil image create from`: on macOS 27 diskutil silently leaves the
+# staging folder's .DS_Store out of the image, so the window layout above never shipped.
+# An APFS volume in LZFSE (ULFO) keeps it; HFS+ zlib images of app folders came out
+# corrupt on macOS 27.0.1. hdiutil prints a deprecation warning; it is harmless.
+hdiutil create -quiet \
+  -srcfolder "${STAGING}" \
+  -volname "${APP_NAME}" \
+  -fs APFS \
+  -format ULFO \
+  "${DMG_PATH}" 2>/dev/null
+# The layout must be in the image: check before anything is signed or published.
+LAYOUT_MOUNT=$(hdiutil attach "${DMG_PATH}" -nobrowse -noautoopen -readonly 2>/dev/null | awk -F'\t' '/\/Volumes\//{print $NF}')
+HAS_LAYOUT=no
+[ -n "${LAYOUT_MOUNT}" ] && [ -f "${LAYOUT_MOUNT}/.DS_Store" ] && HAS_LAYOUT=yes
+[ -n "${LAYOUT_MOUNT}" ] && hdiutil detach "${LAYOUT_MOUNT}" -quiet || true
+if [ -f "Resources/dmg/DS_Store" ] && [ "${HAS_LAYOUT}" != "yes" ]; then
+  echo "The disk image lost its window layout (.DS_Store); not signing or publishing it." >&2
+  exit 1
+fi
+# Never sign or publish an unreadable image (hdiutil's zlib images of HFS+ volumes came out
+# corrupt on macOS 27.0.1; this APFS one isn't, but the check costs nothing). No grep -q:
+# under pipefail its early exit reads as a failure.
+INFO=$(hdiutil imageinfo "${DMG_PATH}" 2>/dev/null | grep "Format Description" || true)
+if [ -z "${INFO}" ]; then
   echo "The disk image came out unreadable; not signing or publishing it." >&2
   exit 1
 fi
