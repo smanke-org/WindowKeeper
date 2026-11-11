@@ -40,6 +40,12 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
             profilesWindow = profiles
             AgentContext.showProfiles = { profiles.show(highlight: $0) }
             AgentSocket.listen { AgentRouter.handle($0) }
+            // Opt-in, for testing ShortcutsLens's Change Shortcut on the test copy's own
+            // settings. Its shortcuts register but do nothing when pressed.
+            if ProcessInfo.processInfo.environment["WINDOWKEEPER_DEBUG_SHORTCUTS"] == "1" {
+                HotKeyCenter.shared.apply()
+                startShortcutsLensReport()
+            }
             return
         }
         #endif
@@ -102,7 +108,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
             }
         }
         HotKeyCenter.shared.apply()
-        ShortcutsLensReport.start { HotKeyCenter.shared.reportedShortcuts }
+        startShortcutsLensReport()
 
         launchAtLogin.enableOnFirstRun()
         // An automatic update must not restart WindowKeeper while it is putting windows back.
@@ -119,6 +125,13 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
             // deliberate act by the user, never from a background timer.
             settingsWindow.show()
         }
+    }
+
+    /// ShortcutsLens lists the shortcuts and can give them new keys (its Change Shortcut).
+    private func startShortcutsLensReport() {
+        ShortcutsLensReport.start({ HotKeyCenter.shared.reportedShortcuts }, change: { id, keyCode, modifiers in
+            HotKeyCenter.shared.change(id: id, keyCode: keyCode, carbonModifiers: modifiers)
+        })
     }
 
     /// Quitting asks first, while "Ask before quitting" is on in Settings › General. Not when
