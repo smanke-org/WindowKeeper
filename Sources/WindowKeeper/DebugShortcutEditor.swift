@@ -34,8 +34,15 @@ enum DebugShortcutEditor {
         model.control = false; model.option = false; model.shift = false; model.command = false
         model.typed("k")
         out.append("bare k combo \(model.combo?.display ?? "-") problem \(model.problem ?? "-")")
+        model.choose(Int(kVK_Space))
+        model.typed(model.keyText)
+        out.append("menu Space→\(model.keyText)")
         model.choose(Int(kVK_F6))
-        out.append("F6 alone: \(model.combo?.display ?? "-") problem \(model.problem ?? "-")")
+        model.typed(model.keyText)
+        out.append("menu F6→\(model.keyText); F6 alone: \(model.combo?.display ?? "-") problem \(model.problem ?? "-")")
+        let names = [kVK_Delete, kVK_ForwardDelete, kVK_Home, kVK_End, kVK_PageUp, kVK_PageDown]
+            .compactMap { HotKey(keyCode: $0, carbonModifiers: cmdKey)?.display }
+        out.append("names \(names.joined(separator: " "))")
         guard let save = settings.saveAllHotKey else { return out.joined(separator: "; ") }
         var flags: NSEvent.ModifierFlags = []
         if save.modifiers & UInt32(controlKey) != 0 { flags.insert(.control) }
@@ -54,12 +61,14 @@ enum DebugShortcutEditor {
             try? rep.representation(using: .png, properties: [:])?.write(to: URL(fileURLWithPath: shot))
         }
         model.finish?(.set(model.combo))
+        out.append("right after set: title \(button.debugTitle), registered \(HotKeyCenter.shared.reportedShortcuts.map(\.title))")
         await waitForClose(button)
         out.append("after set: save \(settings.saveAllHotKey?.display ?? "none"), restore \(settings.restoreAllHotKey?.display ?? "none"), title \(button.debugTitle), registered \(HotKeyCenter.shared.reportedShortcuts.map(\.title))")
         button.performClick(nil)
         try? await Task.sleep(for: .milliseconds(300))
         guard let again = button.debugModel else { return out.joined(separator: "; ") + "; editor did not reopen" }
         again.finish?(.set(nil))
+        out.append("right after clear: title \(button.debugTitle)")
         await waitForClose(button)
         out.append("after clear: save \(settings.saveAllHotKey?.display ?? "none"), restore \(settings.restoreAllHotKey?.display ?? "none"), title \(button.debugTitle), registered \(HotKeyCenter.shared.reportedShortcuts.map(\.title))")
         return out.joined(separator: "; ")

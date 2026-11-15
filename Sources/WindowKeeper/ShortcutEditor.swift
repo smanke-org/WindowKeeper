@@ -82,10 +82,16 @@ struct ShortcutRecorder: NSViewRepresentable {
                 hotKey = key
                 onChange?(key)
             }
-            popover?.close()
+            // Clean up here rather than waiting for popoverDidClose: when the app isn't
+            // frontmost that message can come late or never, leaving the hotkeys unregistered.
+            let closing = popover
+            closed()
+            closing?.close()
         }
 
+        /// Runs once per popover, from finish or from popoverDidClose (Esc, a click outside).
         private func closed() {
+            guard popover != nil else { return }
             if let monitor { NSEvent.removeMonitor(monitor) }
             monitor = nil
             if let popover { PopoverCloser.shared.onClose[ObjectIdentifier(popover)] = nil }
@@ -181,9 +187,11 @@ struct ShortcutRecorder: NSViewRepresentable {
 
     /// The key box changed: keep the last character typed and find its key.
     func typed(_ text: String) {
+        // A key picked from the menu shows its name ("F6", "Space"): keep it, before the cut
+        // to the last character below would turn it into "6" or "e".
+        if let code = keyCode, KeyNames.name(code) == text { return }
         if text.count > 1, let last = text.last { keyText = String(last); return }
         guard !text.isEmpty else { keyCode = nil; return }
-        if let code = keyCode, KeyNames.name(code) == text { return }
         if let (code, needsShift) = KeyNames.keyCode(for: text) {
             keyCode = code
             if needsShift { shift = true }
@@ -323,15 +331,7 @@ enum KeyNames {
     static let functionKeys: [Int] = HotKey.fKeys.sorted { $0.value < $1.value }.map(\.key)
 
     static func name(_ code: Int) -> String {
-        switch code {
-        case kVK_Delete: return "⌫"
-        case kVK_ForwardDelete: return "⌦"
-        case kVK_Home: return "↖"
-        case kVK_End: return "↘"
-        case kVK_PageUp: return "⇞"
-        case kVK_PageDown: return "⇟"
-        default: return HotKey.name(keyCode: code, characters: HotKey.layoutCharacter(code))
-        }
+        HotKey.name(keyCode: code, characters: HotKey.layoutCharacter(code))
     }
 
     static func spoken(_ code: Int) -> String {
