@@ -190,14 +190,14 @@ struct ShortcutRecorder: NSViewRepresentable {
         // A key picked from the menu shows its name ("F6", "Space"): keep it, before the cut
         // to the last character below would turn it into "6" or "e".
         if let code = keyCode, KeyNames.name(code) == text { return }
-        if text.count > 1, let last = text.last { keyText = String(last); return }
-        guard !text.isEmpty else { keyCode = nil; return }
-        if let (code, needsShift) = KeyNames.keyCode(for: text) {
+        let key = text.last.map(String.init) ?? ""
+        keyText = key
+        guard !key.isEmpty else { keyCode = nil; return }
+        if let (code, needsShift) = KeyNames.keyCode(for: key) {
             keyCode = code
             if needsShift { shift = true }
             // Show the base key: ⇧ + = stays “=”, not “+”.
-            let base = KeyNames.name(code)
-            if base != text { keyText = base }
+            keyText = KeyNames.name(code)
         } else {
             keyCode = nil
         }

@@ -31,6 +31,10 @@ enum DebugShortcutEditor {
         model.command = true
         model.typed("+")
         out.append("⌘ plus→\(model.combo?.display ?? "-") problem \(model.problem ?? "-")")
+        model.typed("=")
+        out.append("then = →\(model.keyText) combo \(model.combo?.display ?? "-")")
+        model.typed("=k")
+        out.append("then k →\(model.keyText) combo \(model.combo?.display ?? "-")")
         model.control = false; model.option = false; model.shift = false; model.command = false
         model.typed("k")
         out.append("bare k combo \(model.combo?.display ?? "-") problem \(model.problem ?? "-")")
