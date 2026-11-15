@@ -100,9 +100,9 @@ struct SettingsView: View {
             Divider()
 
             section("Keyboard Shortcuts") {
-                shortcutRow("Save all", $settings.saveAllHotKey)
-                shortcutRow("Restore all", $settings.restoreAllHotKey)
-                caption("Work from any app. Click a box and press the keys; Delete clears it.")
+                shortcutRow("Save all", $settings.saveAllHotKey, .saveAll)
+                shortcutRow("Restore all", $settings.restoreAllHotKey, .restoreAll)
+                caption("Work from any app. Click a box to set it: pick the modifier keys and type a key, or press the shortcut. Keys the other shortcut has are moved here.")
             }
 
             Divider()
@@ -180,11 +180,11 @@ struct SettingsView: View {
         NSWorkspace.shared.activateFileViewerSelecting([target])
     }
 
-    private func shortcutRow(_ label: String, _ binding: Binding<HotKey?>) -> some View {
+    private func shortcutRow(_ label: String, _ binding: Binding<HotKey?>, _ action: HotKeyCenter.Action) -> some View {
         HStack {
             Text(label)
             Spacer()
-            ShortcutRecorder(hotKey: binding)
+            ShortcutRecorder(hotKey: binding, action: action)
                 .fixedSize()
         }
     }

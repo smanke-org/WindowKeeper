@@ -74,6 +74,7 @@ enum Help {
                 ("An app reopens", "Each window goes back as the app opens it"),
             ]),
             .text("After a restore, WindowKeeper watches the windows for a little while and undoes moves an app makes on its own. If you drag a window during that time, it leaves it where you put it. Apps that aren't running are skipped, never opened."),
+            .text("Click a shortcut to open its editor: turn on the modifier keys (⌃ ⌥ ⇧ ⌘), type a letter, number or symbol, or pick Space, an arrow or an F-key from the keyboard menu — or just press the shortcut. Shortcuts need ⌘, ⌥ or ⌃, except F-keys. If the other WindowKeeper shortcut has the keys, they move to this one and the other is cleared. Clear removes a shortcut."),
             .tip("Set the shortcuts in Settings › Keyboard Shortcuts. ShortcutsLens lists them too."),
         ]),
 

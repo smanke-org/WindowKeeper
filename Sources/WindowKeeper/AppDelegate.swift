@@ -46,6 +46,12 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
                 HotKeyCenter.shared.apply()
                 startShortcutsLensReport()
             }
+            // With WINDOWKEEPER_DEBUG=1 too: Settings and the debug hooks (on a name of their
+            // own, so the real app never hears them), for testing the shortcut editor.
+            if Diagnostics.isEnabled {
+                settingsWindow = SettingsWindowController(keeper: keeper, launchAtLogin: launchAtLogin)
+                listenForDebugCommands()
+            }
             return
         }
         #endif
@@ -231,7 +237,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     private func listenForDebugCommands() {
         guard Diagnostics.isEnabled else { return }
         DistributedNotificationCenter.default().addObserver(
-            forName: Notification.Name("com.smanke.WindowKeeper.debug"), object: nil, queue: .main
+            forName: Notification.Name("com.smanke.WindowKeeper.debug" + (AgentSocket.isTestRun ? ".test" : "")), object: nil, queue: .main
         ) { note in
             let command = note.object as? String ?? ""
             MainActor.assumeIsolated { [weak self] in self?.runDebugCommand(command) }
@@ -256,6 +262,12 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         case ("lock", let state): if let id = keeper.currentProfileID { keeper.setLocked(state == "on", profileID: id) }
         case ("autosave", "now"): keeper.debugAutoSave()
         case ("displays", "changed"): keeper.debugDisplaysChanged()
+        #if DEBUG
+        case ("shortcut-editor", let shot):
+            Task { @MainActor in
+                Diagnostics.note("debug: shortcut-editor " + (await DebugShortcutEditor.run(window: settingsWindow.window, shot: shot)))
+            }
+        #endif
         default: Diagnostics.note("debug: unknown command \(command)")
         }
     }

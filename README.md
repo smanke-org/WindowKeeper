@@ -158,7 +158,7 @@ from your settings.
 | Placing windows, mapping between desks, keeping title bars reachable | `Placement` |
 | Guarding restored windows; respecting user drags | `RestoreSession`, `AppLaunchRestore` |
 | Desktop icons over Apple Events (`osascript`, off the main thread) | `FinderDesktop` |
-| Global shortcuts (Carbon hot keys) and the recorder | `HotKeys` |
+| Global shortcuts (Carbon hot keys) and the shortcut editor | `HotKeys`, `ShortcutEditor` |
 | Local + iCloud storage, import | `ProfileStore` |
 
 Pure logic lives in `WindowKeeperKit` and is covered by `swift test`.
